@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+examples/charts.png
+examples/analytics_charts.png
+examples/route_coverage_curve.png
+examples/last_result.json
+.venv/
+venv/
