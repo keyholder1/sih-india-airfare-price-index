@@ -46,12 +46,33 @@ structured data, not just prose, so a teammate can query it programmatically.
 
 | Source | Category | Status | Why |
 |---|---|---|---|
-| IndiGo (goindigo.in) | Official airline site | `SOURCE_UNAVAILABLE` | robots.txt fetch **timed out** during evaluation (consistent with bot-protection/CDN challenge behaviour); no public fare API |
-| Air India (airindia.com) | Official airline site | `SOURCE_UNAVAILABLE` | Not independently re-tested this session (same category as IndiGo — see below); no public fare API |
-| MakeMyTrip (makemytrip.com) | OTA | `SOURCE_UNAVAILABLE` | robots.txt fetch **timed out**; ToS prohibits automated scraping; partner API exists but requires credentials nobody has configured |
-| Cleartrip (cleartrip.com) | OTA | `SOURCE_UNAVAILABLE` | Not independently re-tested this session; same OTA category as MakeMyTrip |
-| Amadeus Self-Service Flight Offers Search API | Third-party API | `SOURCE_UNAVAILABLE` | **Legitimate, ToS-compliant path to real fares** — but requires an API key/secret this project has not been given |
+| IndiGo (goindigo.in) | Official airline site | `SOURCE_UNAVAILABLE` | **Updated finding:** IndiGo runs a real developer/NDC API program — the strongest airline-specific candidate. `scraper.indigo_source.IndiGoSource` is a credential-driven scaffold ready to receive real access, but production approval and a verified request/response contract are not yet in place. See §2a. |
+| Air India (airindia.com) | Official airline site | `SOURCE_UNAVAILABLE` | Not independently re-tested this session (same category as IndiGo's old assessment); no confirmed public fare API |
+| MakeMyTrip (makemytrip.com) | OTA | `SOURCE_UNAVAILABLE` | robots.txt fetch **timed out**; ToS prohibits automated scraping; `myPartner` is a B2B/travel-agent platform, not a public self-service fare API — do not reverse-engineer internal endpoints |
+| Cleartrip (cleartrip.com) | OTA | `SOURCE_UNAVAILABLE` | Not independently re-tested this session. Earlier project notes referencing a possible public Cleartrip fare API/endpoints were **never verified** and must not be treated as fact or built against |
+| Amadeus Self-Service Flight Offers Search API | Third-party API | `SOURCE_UNAVAILABLE` | **Updated finding: the self-service registration portal has since been shut down.** No longer a near-term path to credentials — do not build around it |
+| Duffel API | Third-party API | `SOURCE_UNAVAILABLE` | Legitimate developer API with a real sandbox (fictional test airline — never present sandbox results as real Indian fares). No credentials configured; Indian domestic coverage in production unconfirmed |
+| Travelpayouts / Aviasales | Third-party API | `SOURCE_UNAVAILABLE` | Possible source; likely cached/aggregated rather than live-quote data (unconfirmed). No credentials configured; Indian coverage unconfirmed |
 | Aviationstack API | Third-party API | `SOURCE_UNAVAILABLE` | Requires a key nobody has configured, **and** doesn't return fare/price data at all (flight status/schedule only) — wrong data type regardless of credentials |
+
+### 2a. IndiGo adapter scaffold
+
+`scraper.indigo_source.IndiGoSource` reads credentials from environment
+variables (`INDIGO_API_KEY`, optionally `INDIGO_USERNAME`,
+`INDIGO_PASSWORD`, `INDIGO_API_BASE_URL` — see `.env.example`). Today it
+always returns `SOURCE_UNAVAILABLE`, for one of two honestly-distinguished
+reasons:
+
+- No credentials configured (`error_detail` names the missing env var).
+- Credentials configured, but `IndiGoSource._call_api` is intentionally
+  a `NotImplementedError` — no real endpoint, auth flow, or response
+  schema has been fabricated. See that method's docstring for exactly
+  what's needed to complete it once real, verified IndiGo API access
+  exists.
+
+`LIVE_SOURCES` uses `IndiGoSource` (not the generic `UnavailableLiveSource`
+wrapper) for IndiGo specifically, so this real credential-gated logic is
+what actually runs in `mode="live"`.
 
 **Honest limitation on the evaluation itself:** only IndiGo's and
 MakeMyTrip's `robots.txt` were actually fetched this session (both timed
@@ -169,6 +190,45 @@ Physically separate trees, not a flag column, so a consumer can never
 accidentally point the index engine at the raw tree. Every write is
 exclusive-create (`open(path, "x")`) — writing the same `run_id` twice
 raises `FileExistsError` rather than silently overwriting a previous run.
+
+## 7a. JSON collection envelope (primary team handoff format)
+
+`scraper.storage.write_collection_json(report, observations, route_attempts=None, base_dir="data")`
+writes the single-file JSON handoff the rest of the team consumes:
+
+```
+data/collections/<run_id>.json
+{
+  "schema_version": "1.0",
+  "collection_metadata": { ... ScrapeRunReport.to_dict() ... },
+  "route_attempts": [ ... report.to_route_attempts() by default ... ],
+  "observations": [ ... one object per individual fare quote, never aggregated ... ]
+}
+```
+
+This is additive to, not a replacement for, the raw/validated `.jsonl`
+trees in §7 — those remain the internal raw-vs-validated audit trail;
+this envelope is the one file to actually hand to another teammate or
+load with `scraper.storage.load_json_observations(path)`, which returns
+`payload["observations"]` directly, ready to pass as
+`data_quality.validate_fare_batch(raw_data=...)`. Exclusive-create, same
+as every other writer here — a duplicate `run_id` raises
+`FileExistsError` rather than overwriting a previous run.
+
+`examples/scraper_demo.py` writes this envelope on every run (mock or
+live) right after `run_scrape(...)` returns, including the honest
+zero-observations case in live mode today.
+
+## 7b. Credential handling
+
+No real credentials exist in this repository, in tests, or in any
+committed file — `.gitignore` excludes `.env*` (except `.env.example`,
+which contains only empty placeholders). To use a real source adapter
+locally: copy `.env.example` to `.env`, fill in real values, and load
+them into your shell/process before running the scraper (e.g. via
+`python-dotenv` or your shell's own env-var mechanism — this project does
+not currently auto-load `.env`, to avoid an extra dependency for a
+prototype with zero connected real sources today).
 
 ## 8. Scraper health / run report
 

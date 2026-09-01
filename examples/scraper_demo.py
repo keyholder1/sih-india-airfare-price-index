@@ -22,6 +22,8 @@ from datetime import date
 from data_quality import validate_fare_batch
 from index_engine import AirfarePriceIndex, IndexConfig
 from scraper import ScraperConfig, generate_booking_horizon_dates, load_routes, run_scrape
+from scraper.models import ScrapeRunReport
+from scraper.storage import write_collection_json
 
 logging.getLogger("scraper").setLevel(logging.INFO)
 
@@ -41,6 +43,9 @@ def main() -> None:
 
     print("\n--- Scraper run report ---")
     print(report.to_text())
+
+    json_path = write_collection_json(report, raw_observations, base_dir="data")
+    print(f"\n--- JSON collection envelope written ---\n{json_path}")
 
     is_real = len(raw_observations) > 0 and all(not o.get("is_mock", False) for o in raw_observations)
     has_data = len(raw_observations) > 0

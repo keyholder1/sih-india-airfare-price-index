@@ -45,9 +45,20 @@ def test_live_sources_registry_matches_evaluated_sources_count():
 
 
 def test_sources_requiring_credentials_are_flagged_as_such():
+    # IndiGo: a real developer/NDC API exists, just not yet approved/credentialed
+    # for this project (updated finding — see docs/scraper.md).
+    indigo = next(p for p in EVALUATED_SOURCES if p.name == "IndiGo")
+    assert indigo.requires_credentials is True
+    assert indigo.api_exists is True
+
+
+def test_amadeus_self_service_portal_shutdown_is_reflected_accurately():
+    # UPDATED FINDING: the Amadeus self-service portal previously assumed
+    # available has since shut down — api_exists must not still claim a
+    # working self-service API exists (see docs/scraper.md).
     amadeus = next(p for p in EVALUATED_SOURCES if "Amadeus" in p.name)
-    assert amadeus.requires_credentials is True
-    assert amadeus.api_exists is True  # a real, legitimate API — just missing credentials
+    assert amadeus.api_exists is False
+    assert "shut down" in amadeus.limitations.lower()
 
 
 def test_aviationstack_documented_as_wrong_data_type_not_just_missing_key():

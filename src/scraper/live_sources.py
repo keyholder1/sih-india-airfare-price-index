@@ -28,6 +28,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Literal
 
+from .indigo_source import IndiGoSource
 from .models import SourceCallResult
 from .source import FareSource, SearchRequest
 
@@ -60,20 +61,25 @@ EVALUATED_SOURCES: List[SourceProfile] = [
         name="IndiGo",
         domain="www.goindigo.in",
         access_method="OFFICIAL_AIRLINE_WEBSITE",
-        robots_txt_status="FETCH_BLOCKED_OR_TIMED_OUT",
-        api_exists=False,
-        requires_credentials=False,
-        rate_limits_known="Unknown — request never completed",
-        fields_available="Unknown — not reachable programmatically this session",
-        limitations="No public fare-search API; only an interactive booking website.",
-        reason_unavailable=(
-            "An automated fetch of https://www.goindigo.in/robots.txt timed out during "
-            "evaluation, consistent with bot-protection/CDN challenge behaviour rather than a "
-            "plain static file. No public API exists. Search results/fares are only reachable "
-            "through the interactive booking flow, which this project will not automate without "
-            "confirming it's permitted and without bypassing any protection it has."
+        robots_txt_status="NOT_INDEPENDENTLY_CHECKED",
+        api_exists=True,
+        requires_credentials=True,
+        rate_limits_known="Not yet confirmed — depends on the developer/NDC program tier granted",
+        fields_available="Not yet confirmed — depends on the granted API's actual response schema",
+        limitations=(
+            "IndiGo operates a real developer/NDC API program (updated finding, superseding "
+            "the earlier 'no public API' assessment). Production access is understood to "
+            "involve an approval/business process, not instant self-service signup."
         ),
-        empirically_tested_this_session=True,
+        reason_unavailable=(
+            "This is currently the strongest airline-specific candidate for a real source. "
+            "scraper.indigo_source.IndiGoSource is a credential-driven scaffold ready to "
+            "receive real API access, but no approved credentials or verified request/response "
+            "contract exist yet in this project -- see docs/scraper.md 'Adding a real source "
+            "later'. Do not fabricate the endpoint, auth flow, or response shape; complete "
+            "IndiGoSource._call_api only once real, verified API documentation is obtained."
+        ),
+        empirically_tested_this_session=False,
     ),
     SourceProfile(
         name="Air India",
@@ -102,12 +108,18 @@ EVALUATED_SOURCES: List[SourceProfile] = [
         requires_credentials=True,
         rate_limits_known="Unknown — request never completed",
         fields_available="Unknown — not reachable programmatically this session",
-        limitations="Public affiliate/partner APIs exist for OTAs like this in general, but require a signed partner agreement and issued credentials this project does not have.",
+        limitations=(
+            "MakeMyTrip's 'myPartner' program is a B2B/travel-agent platform, not a public "
+            "self-service developer fare API -- it is not automatically available just by "
+            "signing up. Any programmatic fare access would require a proper authorized "
+            "business relationship, not a self-service key."
+        ),
         reason_unavailable=(
             "An automated fetch of https://www.makemytrip.com/robots.txt timed out during "
             "evaluation, consistent with bot-protection. MakeMyTrip's Terms of Use prohibit "
-            "automated scraping/data-mining of the site (standard OTA ToS clause). Any partner "
-            "API would require credentials nobody has configured for this project."
+            "automated scraping/data-mining of the site (standard OTA ToS clause). Do not "
+            "reverse-engineer internal endpoints or use unofficial/unauthorized APIs for this "
+            "source under any circumstance."
         ),
         empirically_tested_this_session=True,
     ),
@@ -120,11 +132,18 @@ EVALUATED_SOURCES: List[SourceProfile] = [
         requires_credentials=True,
         rate_limits_known="Unknown",
         fields_available="Unknown",
-        limitations="Same OTA category as MakeMyTrip.",
+        limitations=(
+            "Same OTA category as MakeMyTrip. IMPORTANT: earlier project notes referenced a "
+            "possible public/self-service Cleartrip fare API with specific endpoints/headers -- "
+            "those claims were never independently verified and must not be treated as fact. "
+            "Do not build or assume any Cleartrip adapter against unverified documentation."
+        ),
         reason_unavailable=(
             "Not independently fetched this session (see MakeMyTrip note on why a "
             "representative sample was used instead of testing every candidate). Standard OTA "
-            "Terms of Use in this category prohibit automated scraping; no public fare API."
+            "Terms of Use in this category prohibit automated scraping; no verified public fare "
+            "API. If real, authorized Cleartrip API credentials/documentation become available "
+            "later, implement against that real contract only -- never invented endpoints."
         ),
         empirically_tested_this_session=False,
     ),
@@ -133,17 +152,72 @@ EVALUATED_SOURCES: List[SourceProfile] = [
         domain="developers.amadeus.com",
         access_method="THIRD_PARTY_API",
         robots_txt_status="NOT_INDEPENDENTLY_CHECKED",
+        api_exists=False,
+        requires_credentials=True,
+        rate_limits_known="N/A — self-service registration portal has since been shut down",
+        fields_available="N/A",
+        limitations=(
+            "UPDATED FINDING: the Amadeus self-service developer portal this project previously "
+            "identified as the strongest first-real-source candidate has since been shut down. "
+            "New self-service registration is not currently possible. Do not build this project "
+            "around Amadeus self-service access, and do not assume credentials can currently be "
+            "obtained through it."
+        ),
+        reason_unavailable=(
+            "Self-service registration path no longer available. If Amadeus reopens self-service "
+            "access, or a commercial/partner agreement is separately arranged, this entry should "
+            "be re-evaluated -- but it is not a near-term source for this project."
+        ),
+        empirically_tested_this_session=False,
+    ),
+    SourceProfile(
+        name="Duffel API",
+        domain="duffel.com",
+        access_method="THIRD_PARTY_API",
+        robots_txt_status="NOT_INDEPENDENTLY_CHECKED",
         api_exists=True,
         requires_credentials=True,
-        rate_limits_known="Free tier exists but is quota-limited (per Amadeus for Developers documentation, subject to change)",
-        fields_available="Fare offers including price, cabin, itinerary — a genuinely fare-relevant API, unlike the flight-status APIs below.",
-        limitations="Requires registering an application and obtaining an API key/secret (OAuth client credentials) before any request can be made.",
+        rate_limits_known="Not yet confirmed for this project's usage tier",
+        fields_available=(
+            "Genuine flight offer search (fares, itineraries) via a documented developer API. "
+            "Sandbox mode uses a fictional 'Duffel Airways' test airline -- sandbox results must "
+            "never be represented as real Indian market fares."
+        ),
+        limitations=(
+            "Production access requires verification/commercial terms. Indian domestic airline "
+            "coverage in production is not confirmed for this project -- do not claim it works "
+            "for Indian routes until actually tested against a real production credential."
+        ),
         reason_unavailable=(
-            "This is a legitimate, ToS-compliant path to real fare data in principle — but it "
-            "requires API credentials this project has not been given. Per the brief's explicit "
-            "constraint ('do not use credentials unless explicitly provided/configured'), this "
-            "was not registered for or wired up. This is the strongest candidate for the FIRST "
-            "real source to connect once credentials are obtained — see docs/scraper.md."
+            "Legitimate developer API with a real sandbox, but no credentials (sandbox or "
+            "production) have been configured for this project, and Indian domestic coverage is "
+            "unverified. A reasonable optional future adapter once someone registers and "
+            "confirms Indian route coverage -- see docs/scraper.md."
+        ),
+        empirically_tested_this_session=False,
+    ),
+    SourceProfile(
+        name="Travelpayouts / Aviasales",
+        domain="travelpayouts.com",
+        access_method="THIRD_PARTY_API",
+        robots_txt_status="NOT_INDEPENDENTLY_CHECKED",
+        api_exists=True,
+        requires_credentials=True,
+        rate_limits_known="Not yet confirmed",
+        fields_available=(
+            "Likely cached/aggregated fare data rather than a live shopping quote -- this "
+            "distinction is unconfirmed and must be verified before any data from this source "
+            "is presented as equivalent to a live scraped fare."
+        ),
+        limitations=(
+            "Indian domestic route coverage is not confirmed. If ever implemented, any data "
+            "from this source must be clearly labelled as cached/aggregated, not live, unless "
+            "proven otherwise."
+        ),
+        reason_unavailable=(
+            "Worth investigating further, but no credentials are configured and neither "
+            "Indian coverage nor live-vs-cached data freshness has been verified. Not wired up "
+            "until both are confirmed."
         ),
         empirically_tested_this_session=False,
     ),
@@ -182,9 +256,21 @@ class UnavailableLiveSource(FareSource):
         return SourceCallResult(status="SOURCE_UNAVAILABLE", observations=[], error_detail=self.profile.reason_unavailable)
 
 
+#: Sources with an actual credential-gated adapter (not just a static
+#: profile wrapper) -- currently only IndiGo. Still returns
+#: SOURCE_UNAVAILABLE today (see IndiGoSource docstring), but for the
+#: real reason "no verified API contract/credentials yet," decided at
+#: call time, not hard-coded per instance.
+_ADAPTER_SOURCES_BY_NAME = {
+    "IndiGo": IndiGoSource,
+}
+
 #: What ``ScraperConfig(mode="live")`` uses when the caller doesn't supply
 #: its own source list. Every one of these will return SOURCE_UNAVAILABLE
 #: today (see module docstring) — a live run is expected to collect zero
 #: observations and a run report full of documented, honest failures,
 #: which is the correct behaviour until a real source is connected.
-LIVE_SOURCES: List[FareSource] = [UnavailableLiveSource(profile) for profile in EVALUATED_SOURCES]
+LIVE_SOURCES: List[FareSource] = [
+    _ADAPTER_SOURCES_BY_NAME[profile.name]() if profile.name in _ADAPTER_SOURCES_BY_NAME else UnavailableLiveSource(profile)
+    for profile in EVALUATED_SOURCES
+]

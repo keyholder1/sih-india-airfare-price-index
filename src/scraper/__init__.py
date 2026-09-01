@@ -19,6 +19,7 @@ live mode, provenance, and known limitations.
 """
 
 from .config import ScraperConfig, ScraperMode
+from .indigo_source import IndiGoCredentials, IndiGoSource, load_credentials_from_env
 from .live_sources import EVALUATED_SOURCES, LIVE_SOURCES, SourceProfile, UnavailableLiveSource
 from .mock_source import MockFareSource, default_mock_sources
 from .models import RawFareObservation, ScrapeRunReport, SourceCallResult, SourceRunSummary
@@ -26,7 +27,14 @@ from .rate_limit import RateLimiter, RetryExhaustedError, retry_with_backoff
 from .routes import RouteSpec, load_routes, route_pairs
 from .runner import generate_booking_horizon_dates, run_scrape
 from .source import FareSource, SearchRequest
-from .storage import write_raw_run, write_run_report, write_validated_run
+from .storage import (
+    build_collection_envelope,
+    load_json_observations,
+    write_collection_json,
+    write_raw_run,
+    write_run_report,
+    write_validated_run,
+)
 
 __all__ = [
     "ScraperConfig",
@@ -54,6 +62,12 @@ __all__ = [
     "write_raw_run",
     "write_validated_run",
     "write_run_report",
+    "write_collection_json",
+    "build_collection_envelope",
+    "load_json_observations",
+    "IndiGoSource",
+    "IndiGoCredentials",
+    "load_credentials_from_env",
 ]
 
 __version__ = "0.1.0"
