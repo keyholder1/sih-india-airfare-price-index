@@ -1,0 +1,1052 @@
+{
+  "price_index": {
+    "base_period": "2026-01",
+    "current_period": "2026-08",
+    "national_index": 107.34886087514067,
+    "mom_change_pct": -0.8717189960544047,
+    "yoy_change_pct": null,
+    "routes_covered": 10,
+    "routes_total": 10,
+    "observations_used": 277,
+    "coverage_rate": 1.0,
+    "observations_received": 2420,
+    "observations_rejected": 36,
+    "outliers_flagged": 36,
+    "routes_expected": 10,
+    "routes_with_data": 10,
+    "representative_method": "median",
+    "aggregation_method": "arithmetic",
+    "route_indices": [
+      {
+        "route": "BLR-BOM",
+        "origin": "BLR",
+        "destination": "BOM",
+        "period": "2026-08",
+        "base_period_fare": 5188.89,
+        "period_fare": 5601.67,
+        "route_index": 107.955073243025,
+        "observations_used": 25,
+        "weight_raw": 0.07733778313685508,
+        "weight_normalized": 0.07733778313685509,
+        "status": "OK"
+      },
+      {
+        "route": "BLR-DEL",
+        "origin": "BLR",
+        "destination": "DEL",
+        "period": "2026-08",
+        "base_period_fare": 7717.35,
+        "period_fare": 9242.720000000001,
+        "route_index": 119.76546353346681,
+        "observations_used": 22,
+        "weight_raw": 0.16525320628091655,
+        "weight_normalized": 0.16525320628091658,
+        "status": "OK"
+      },
+      {
+        "route": "BLR-HYD",
+        "origin": "BLR",
+        "destination": "HYD",
+        "period": "2026-08",
+        "base_period_fare": 5871.77,
+        "period_fare": 5611.92,
+        "route_index": 95.57458824170564,
+        "observations_used": 20,
+        "weight_raw": 0.07626741465830596,
+        "weight_normalized": 0.07626741465830597,
+        "status": "OK"
+      },
+      {
+        "route": "BOM-BLR",
+        "origin": "BOM",
+        "destination": "BLR",
+        "period": "2026-08",
+        "base_period_fare": 4592.66,
+        "period_fare": 4494.1900000000005,
+        "route_index": 97.85592663075431,
+        "observations_used": 24,
+        "weight_raw": 0.07855734059012977,
+        "weight_normalized": 0.07855734059012978,
+        "status": "OK"
+      },
+      {
+        "route": "BOM-DEL",
+        "origin": "BOM",
+        "destination": "DEL",
+        "period": "2026-08",
+        "base_period_fare": 5146.01,
+        "period_fare": 4632.2,
+        "route_index": 90.01537113219756,
+        "observations_used": 32,
+        "weight_raw": 0.12550530933264417,
+        "weight_normalized": 0.1255053093326442,
+        "status": "OK"
+      },
+      {
+        "route": "CCU-DEL",
+        "origin": "CCU",
+        "destination": "DEL",
+        "period": "2026-08",
+        "base_period_fare": 8106.28,
+        "period_fare": 7959.57,
+        "route_index": 98.19016861001595,
+        "observations_used": 22,
+        "weight_raw": 0.09528418441673588,
+        "weight_normalized": 0.09528418441673589,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-BOM",
+        "origin": "DEL",
+        "destination": "BOM",
+        "period": "2026-08",
+        "base_period_fare": 4910.88,
+        "period_fare": 6163.56,
+        "route_index": 125.50825921219821,
+        "observations_used": 33,
+        "weight_raw": 0.1276245889880858,
+        "weight_normalized": 0.12762458898808582,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-HYD",
+        "origin": "DEL",
+        "destination": "HYD",
+        "period": "2026-08",
+        "base_period_fare": 7967.07,
+        "period_fare": 8798.650000000001,
+        "route_index": 110.43771424124554,
+        "observations_used": 28,
+        "weight_raw": 0.10426966565070615,
+        "weight_normalized": 0.10426966565070617,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-MAA",
+        "origin": "DEL",
+        "destination": "MAA",
+        "period": "2026-08",
+        "base_period_fare": 5403.88,
+        "period_fare": 6144.52,
+        "route_index": 113.70570775072726,
+        "observations_used": 39,
+        "weight_raw": 0.07493247360178351,
+        "weight_normalized": 0.07493247360178353,
+        "status": "OK"
+      },
+      {
+        "route": "MAA-DEL",
+        "origin": "MAA",
+        "destination": "DEL",
+        "period": "2026-08",
+        "base_period_fare": 5835.41,
+        "period_fare": 5857.225,
+        "route_index": 100.37383834212163,
+        "observations_used": 32,
+        "weight_raw": 0.07496803334383706,
+        "weight_normalized": 0.07496803334383707,
+        "status": "OK"
+      }
+    ],
+    "route_contributions": [
+      {
+        "route": "BOM-DEL",
+        "weight_normalized": 0.1255053093326442,
+        "route_index_current": 90.01537113219756,
+        "route_index_previous": 100.12310508529907,
+        "contribution_points": -1.2685742764360763
+      },
+      {
+        "route": "BLR-DEL",
+        "weight_normalized": 0.16525320628091658,
+        "route_index_current": 119.76546353346681,
+        "route_index_previous": 117.98752162335516,
+        "contribution_points": 0.2938106012271674
+      },
+      {
+        "route": "CCU-DEL",
+        "weight_normalized": 0.09528418441673589,
+        "route_index_current": 98.19016861001595,
+        "route_index_previous": 100.68798511771121,
+        "contribution_points": -0.23800240875840256
+      },
+      {
+        "route": "DEL-HYD",
+        "weight_normalized": 0.10426966565070617,
+        "route_index_current": 110.43771424124554,
+        "route_index_previous": 108.19680258865556,
+        "contribution_points": 0.23365910876832927
+      },
+      {
+        "route": "DEL-MAA",
+        "weight_normalized": 0.07493247360178353,
+        "route_index_current": 113.70570775072726,
+        "route_index_previous": 116.75842172661125,
+        "contribution_points": -0.22874740941172267
+      },
+      {
+        "route": "BLR-HYD",
+        "weight_normalized": 0.07626741465830597,
+        "route_index_current": 95.57458824170564,
+        "route_index_previous": 92.81008963225737,
+        "contribution_points": 0.21084116176910128
+      },
+      {
+        "route": "BOM-BLR",
+        "weight_normalized": 0.07855734059012978,
+        "route_index_current": 97.85592663075431,
+        "route_index_previous": 96.403173759869,
+        "contribution_points": 0.11412440207142578
+      },
+      {
+        "route": "DEL-BOM",
+        "weight_normalized": 0.12762458898808582,
+        "route_index_current": 125.50825921219821,
+        "route_index_previous": 124.69007591307462,
+        "contribution_points": 0.10442030726756417
+      },
+      {
+        "route": "MAA-DEL",
+        "weight_normalized": 0.07496803334383707,
+        "route_index_current": 100.37383834212163,
+        "route_index_previous": 101.50692067909537,
+        "contribution_points": -0.0849449544195604
+      },
+      {
+        "route": "BLR-BOM",
+        "weight_normalized": 0.07733778313685509,
+        "route_index_current": 107.955073243025,
+        "route_index_previous": 108.99720364085574,
+        "contribution_points": -0.08059605470775878
+      }
+    ],
+    "quality_flags": [
+      "10 route(s) changed OK/not-OK status between 2025-08 and 2026-08 (['BLR-BOM', 'BLR-DEL', 'BLR-HYD', 'BOM-BLR', 'BOM-DEL', 'CCU-DEL', 'DEL-BOM', 'DEL-HYD', 'DEL-MAA', 'MAA-DEL']); YoY reflects a partial change in route composition, not pure price movement, for those routes."
+    ],
+    "cleaning_report": {
+      "total_input": 2420,
+      "total_valid": 2384,
+      "total_removed": 36,
+      "removed_by_reason": {
+        "OUTLIER_IQR": 36
+      }
+    }
+  },
+  "volatility": {
+    "period": "2026-08",
+    "method": "coefficient_of_variation",
+    "national_volatility": 0.09541187818562595,
+    "national_classification": "LOW",
+    "route_volatility": [
+      {
+        "route": "BLR-BOM",
+        "period": "2026-08",
+        "volatility": 0.10430617090890357,
+        "classification": "MODERATE",
+        "observations_used": 25,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "BLR-DEL",
+        "period": "2026-08",
+        "volatility": 0.08829569049238166,
+        "classification": "LOW",
+        "observations_used": 22,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "BLR-HYD",
+        "period": "2026-08",
+        "volatility": 0.11331236482868211,
+        "classification": "MODERATE",
+        "observations_used": 20,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "BOM-BLR",
+        "period": "2026-08",
+        "volatility": 0.11986138101905087,
+        "classification": "MODERATE",
+        "observations_used": 24,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "BOM-DEL",
+        "period": "2026-08",
+        "volatility": 0.07618936898635402,
+        "classification": "LOW",
+        "observations_used": 32,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "CCU-DEL",
+        "period": "2026-08",
+        "volatility": 0.08479743612249747,
+        "classification": "LOW",
+        "observations_used": 22,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "DEL-BOM",
+        "period": "2026-08",
+        "volatility": 0.10273382427032135,
+        "classification": "MODERATE",
+        "observations_used": 33,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "DEL-HYD",
+        "period": "2026-08",
+        "volatility": 0.097074174555957,
+        "classification": "LOW",
+        "observations_used": 28,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "DEL-MAA",
+        "period": "2026-08",
+        "volatility": 0.07739352343348942,
+        "classification": "LOW",
+        "observations_used": 39,
+        "method": "coefficient_of_variation"
+      },
+      {
+        "route": "MAA-DEL",
+        "period": "2026-08",
+        "volatility": 0.10699660326356208,
+        "classification": "MODERATE",
+        "observations_used": 32,
+        "method": "coefficient_of_variation"
+      }
+    ],
+    "high_volatility_routes": [],
+    "low_volatility_routes": [
+      "BLR-DEL",
+      "BOM-DEL",
+      "CCU-DEL",
+      "DEL-HYD",
+      "DEL-MAA"
+    ],
+    "observations_used": 277,
+    "booking_horizon_volatility": [
+      {
+        "bucket": "0-3",
+        "volatility": 0.22875688782723996,
+        "classification": "MODERATE",
+        "observations_used": 83
+      },
+      {
+        "bucket": "15-30",
+        "volatility": 0.24720414068765514,
+        "classification": "MODERATE",
+        "observations_used": 37
+      },
+      {
+        "bucket": "31-60",
+        "volatility": 0.25055594160310346,
+        "classification": "HIGH",
+        "observations_used": 38
+      },
+      {
+        "bucket": "4-7",
+        "volatility": 0.29855531773279465,
+        "classification": "HIGH",
+        "observations_used": 34
+      },
+      {
+        "bucket": "61+",
+        "volatility": 0.23035936736050505,
+        "classification": "MODERATE",
+        "observations_used": 46
+      },
+      {
+        "bucket": "8-14",
+        "volatility": 0.23988886929450565,
+        "classification": "MODERATE",
+        "observations_used": 39
+      }
+    ]
+  },
+  "route_inflation": [
+    {
+      "route": "BLR-BOM",
+      "origin": "BLR",
+      "destination": "BOM",
+      "current_index": 107.955073243025,
+      "mom_inflation_pct": -0.9561074624121146,
+      "yoy_inflation_pct": null,
+      "weight": 0.07733778313685509,
+      "traffic_weight": 0.006811946906638981,
+      "contribution": -0.08059605470775878,
+      "volatility": 0.10430617090890357,
+      "status": "OK"
+    },
+    {
+      "route": "BLR-DEL",
+      "origin": "BLR",
+      "destination": "DEL",
+      "current_index": 119.76546353346681,
+      "mom_inflation_pct": 1.5068897843174334,
+      "yoy_inflation_pct": null,
+      "weight": 0.16525320628091658,
+      "traffic_weight": 0.01455557712774697,
+      "contribution": 0.2938106012271674,
+      "volatility": 0.08829569049238166,
+      "status": "OK"
+    },
+    {
+      "route": "BLR-HYD",
+      "origin": "BLR",
+      "destination": "HYD",
+      "current_index": 95.57458824170564,
+      "mom_inflation_pct": 2.97866171706338,
+      "yoy_inflation_pct": null,
+      "weight": 0.07626741465830597,
+      "traffic_weight": 0.006717668367085888,
+      "contribution": 0.21084116176910128,
+      "volatility": 0.11331236482868211,
+      "status": "OK"
+    },
+    {
+      "route": "BOM-BLR",
+      "origin": "BOM",
+      "destination": "BLR",
+      "current_index": 97.85592663075431,
+      "mom_inflation_pct": 1.5069554395625628,
+      "yoy_inflation_pct": null,
+      "weight": 0.07855734059012978,
+      "traffic_weight": 0.0069193660785410544,
+      "contribution": 0.11412440207142578,
+      "volatility": 0.11986138101905087,
+      "status": "OK"
+    },
+    {
+      "route": "BOM-DEL",
+      "origin": "BOM",
+      "destination": "DEL",
+      "current_index": 90.01537113219756,
+      "mom_inflation_pct": -10.095306117893877,
+      "yoy_inflation_pct": null,
+      "weight": 0.1255053093326442,
+      "traffic_weight": 0.011054564392703121,
+      "contribution": -1.2685742764360763,
+      "volatility": 0.07618936898635402,
+      "status": "OK"
+    },
+    {
+      "route": "CCU-DEL",
+      "origin": "CCU",
+      "destination": "DEL",
+      "current_index": 98.19016861001595,
+      "mom_inflation_pct": -2.4807493215552423,
+      "yoy_inflation_pct": null,
+      "weight": 0.09528418441673589,
+      "traffic_weight": 0.008392674045758748,
+      "contribution": -0.23800240875840256,
+      "volatility": 0.08479743612249747,
+      "status": "OK"
+    },
+    {
+      "route": "DEL-BOM",
+      "origin": "DEL",
+      "destination": "BOM",
+      "current_index": 125.50825921219821,
+      "mom_inflation_pct": 0.6561735512086608,
+      "yoy_inflation_pct": null,
+      "weight": 0.12762458898808582,
+      "traffic_weight": 0.011241231502977565,
+      "contribution": 0.10442030726756417,
+      "volatility": 0.10273382427032135,
+      "status": "OK"
+    },
+    {
+      "route": "DEL-HYD",
+      "origin": "DEL",
+      "destination": "HYD",
+      "current_index": 110.43771424124554,
+      "mom_inflation_pct": 2.071144062463226,
+      "yoy_inflation_pct": null,
+      "weight": 0.10426966565070617,
+      "traffic_weight": 0.009184119295593401,
+      "contribution": 0.23365910876832927,
+      "volatility": 0.097074174555957,
+      "status": "OK"
+    },
+    {
+      "route": "DEL-MAA",
+      "origin": "DEL",
+      "destination": "MAA",
+      "current_index": 113.70570775072726,
+      "mom_inflation_pct": -2.614555704625654,
+      "yoy_inflation_pct": null,
+      "weight": 0.07493247360178353,
+      "traffic_weight": 0.006600086155239555,
+      "contribution": -0.22874740941172267,
+      "volatility": 0.07739352343348942,
+      "status": "OK"
+    },
+    {
+      "route": "MAA-DEL",
+      "origin": "MAA",
+      "destination": "DEL",
+      "current_index": 100.37383834212163,
+      "mom_inflation_pct": -1.116261166621213,
+      "yoy_inflation_pct": null,
+      "weight": 0.07496803334383707,
+      "traffic_weight": 0.006603218273397816,
+      "contribution": -0.0849449544195604,
+      "volatility": 0.10699660326356208,
+      "status": "OK"
+    }
+  ],
+  "rankings": {
+    "highest_mom_inflation": [
+      {
+        "route": "BLR-HYD",
+        "origin": "BLR",
+        "destination": "HYD",
+        "current_index": 95.57458824170564,
+        "mom_inflation_pct": 2.97866171706338,
+        "yoy_inflation_pct": null,
+        "weight": 0.07626741465830597,
+        "traffic_weight": 0.006717668367085888,
+        "contribution": 0.21084116176910128,
+        "volatility": 0.11331236482868211,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-HYD",
+        "origin": "DEL",
+        "destination": "HYD",
+        "current_index": 110.43771424124554,
+        "mom_inflation_pct": 2.071144062463226,
+        "yoy_inflation_pct": null,
+        "weight": 0.10426966565070617,
+        "traffic_weight": 0.009184119295593401,
+        "contribution": 0.23365910876832927,
+        "volatility": 0.097074174555957,
+        "status": "OK"
+      },
+      {
+        "route": "BOM-BLR",
+        "origin": "BOM",
+        "destination": "BLR",
+        "current_index": 97.85592663075431,
+        "mom_inflation_pct": 1.5069554395625628,
+        "yoy_inflation_pct": null,
+        "weight": 0.07855734059012978,
+        "traffic_weight": 0.0069193660785410544,
+        "contribution": 0.11412440207142578,
+        "volatility": 0.11986138101905087,
+        "status": "OK"
+      },
+      {
+        "route": "BLR-DEL",
+        "origin": "BLR",
+        "destination": "DEL",
+        "current_index": 119.76546353346681,
+        "mom_inflation_pct": 1.5068897843174334,
+        "yoy_inflation_pct": null,
+        "weight": 0.16525320628091658,
+        "traffic_weight": 0.01455557712774697,
+        "contribution": 0.2938106012271674,
+        "volatility": 0.08829569049238166,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-BOM",
+        "origin": "DEL",
+        "destination": "BOM",
+        "current_index": 125.50825921219821,
+        "mom_inflation_pct": 0.6561735512086608,
+        "yoy_inflation_pct": null,
+        "weight": 0.12762458898808582,
+        "traffic_weight": 0.011241231502977565,
+        "contribution": 0.10442030726756417,
+        "volatility": 0.10273382427032135,
+        "status": "OK"
+      }
+    ],
+    "lowest_mom_inflation": [
+      {
+        "route": "BOM-DEL",
+        "origin": "BOM",
+        "destination": "DEL",
+        "current_index": 90.01537113219756,
+        "mom_inflation_pct": -10.095306117893877,
+        "yoy_inflation_pct": null,
+        "weight": 0.1255053093326442,
+        "traffic_weight": 0.011054564392703121,
+        "contribution": -1.2685742764360763,
+        "volatility": 0.07618936898635402,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-MAA",
+        "origin": "DEL",
+        "destination": "MAA",
+        "current_index": 113.70570775072726,
+        "mom_inflation_pct": -2.614555704625654,
+        "yoy_inflation_pct": null,
+        "weight": 0.07493247360178353,
+        "traffic_weight": 0.006600086155239555,
+        "contribution": -0.22874740941172267,
+        "volatility": 0.07739352343348942,
+        "status": "OK"
+      },
+      {
+        "route": "CCU-DEL",
+        "origin": "CCU",
+        "destination": "DEL",
+        "current_index": 98.19016861001595,
+        "mom_inflation_pct": -2.4807493215552423,
+        "yoy_inflation_pct": null,
+        "weight": 0.09528418441673589,
+        "traffic_weight": 0.008392674045758748,
+        "contribution": -0.23800240875840256,
+        "volatility": 0.08479743612249747,
+        "status": "OK"
+      },
+      {
+        "route": "MAA-DEL",
+        "origin": "MAA",
+        "destination": "DEL",
+        "current_index": 100.37383834212163,
+        "mom_inflation_pct": -1.116261166621213,
+        "yoy_inflation_pct": null,
+        "weight": 0.07496803334383707,
+        "traffic_weight": 0.006603218273397816,
+        "contribution": -0.0849449544195604,
+        "volatility": 0.10699660326356208,
+        "status": "OK"
+      },
+      {
+        "route": "BLR-BOM",
+        "origin": "BLR",
+        "destination": "BOM",
+        "current_index": 107.955073243025,
+        "mom_inflation_pct": -0.9561074624121146,
+        "yoy_inflation_pct": null,
+        "weight": 0.07733778313685509,
+        "traffic_weight": 0.006811946906638981,
+        "contribution": -0.08059605470775878,
+        "volatility": 0.10430617090890357,
+        "status": "OK"
+      }
+    ],
+    "highest_yoy_inflation": [],
+    "lowest_yoy_inflation": [],
+    "largest_positive_contributors": [
+      {
+        "route": "BLR-DEL",
+        "origin": "BLR",
+        "destination": "DEL",
+        "current_index": 119.76546353346681,
+        "mom_inflation_pct": 1.5068897843174334,
+        "yoy_inflation_pct": null,
+        "weight": 0.16525320628091658,
+        "traffic_weight": 0.01455557712774697,
+        "contribution": 0.2938106012271674,
+        "volatility": 0.08829569049238166,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-HYD",
+        "origin": "DEL",
+        "destination": "HYD",
+        "current_index": 110.43771424124554,
+        "mom_inflation_pct": 2.071144062463226,
+        "yoy_inflation_pct": null,
+        "weight": 0.10426966565070617,
+        "traffic_weight": 0.009184119295593401,
+        "contribution": 0.23365910876832927,
+        "volatility": 0.097074174555957,
+        "status": "OK"
+      },
+      {
+        "route": "BLR-HYD",
+        "origin": "BLR",
+        "destination": "HYD",
+        "current_index": 95.57458824170564,
+        "mom_inflation_pct": 2.97866171706338,
+        "yoy_inflation_pct": null,
+        "weight": 0.07626741465830597,
+        "traffic_weight": 0.006717668367085888,
+        "contribution": 0.21084116176910128,
+        "volatility": 0.11331236482868211,
+        "status": "OK"
+      },
+      {
+        "route": "BOM-BLR",
+        "origin": "BOM",
+        "destination": "BLR",
+        "current_index": 97.85592663075431,
+        "mom_inflation_pct": 1.5069554395625628,
+        "yoy_inflation_pct": null,
+        "weight": 0.07855734059012978,
+        "traffic_weight": 0.0069193660785410544,
+        "contribution": 0.11412440207142578,
+        "volatility": 0.11986138101905087,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-BOM",
+        "origin": "DEL",
+        "destination": "BOM",
+        "current_index": 125.50825921219821,
+        "mom_inflation_pct": 0.6561735512086608,
+        "yoy_inflation_pct": null,
+        "weight": 0.12762458898808582,
+        "traffic_weight": 0.011241231502977565,
+        "contribution": 0.10442030726756417,
+        "volatility": 0.10273382427032135,
+        "status": "OK"
+      }
+    ],
+    "largest_negative_contributors": [
+      {
+        "route": "BOM-DEL",
+        "origin": "BOM",
+        "destination": "DEL",
+        "current_index": 90.01537113219756,
+        "mom_inflation_pct": -10.095306117893877,
+        "yoy_inflation_pct": null,
+        "weight": 0.1255053093326442,
+        "traffic_weight": 0.011054564392703121,
+        "contribution": -1.2685742764360763,
+        "volatility": 0.07618936898635402,
+        "status": "OK"
+      },
+      {
+        "route": "CCU-DEL",
+        "origin": "CCU",
+        "destination": "DEL",
+        "current_index": 98.19016861001595,
+        "mom_inflation_pct": -2.4807493215552423,
+        "yoy_inflation_pct": null,
+        "weight": 0.09528418441673589,
+        "traffic_weight": 0.008392674045758748,
+        "contribution": -0.23800240875840256,
+        "volatility": 0.08479743612249747,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-MAA",
+        "origin": "DEL",
+        "destination": "MAA",
+        "current_index": 113.70570775072726,
+        "mom_inflation_pct": -2.614555704625654,
+        "yoy_inflation_pct": null,
+        "weight": 0.07493247360178353,
+        "traffic_weight": 0.006600086155239555,
+        "contribution": -0.22874740941172267,
+        "volatility": 0.07739352343348942,
+        "status": "OK"
+      },
+      {
+        "route": "MAA-DEL",
+        "origin": "MAA",
+        "destination": "DEL",
+        "current_index": 100.37383834212163,
+        "mom_inflation_pct": -1.116261166621213,
+        "yoy_inflation_pct": null,
+        "weight": 0.07496803334383707,
+        "traffic_weight": 0.006603218273397816,
+        "contribution": -0.0849449544195604,
+        "volatility": 0.10699660326356208,
+        "status": "OK"
+      },
+      {
+        "route": "BLR-BOM",
+        "origin": "BLR",
+        "destination": "BOM",
+        "current_index": 107.955073243025,
+        "mom_inflation_pct": -0.9561074624121146,
+        "yoy_inflation_pct": null,
+        "weight": 0.07733778313685509,
+        "traffic_weight": 0.006811946906638981,
+        "contribution": -0.08059605470775878,
+        "volatility": 0.10430617090890357,
+        "status": "OK"
+      }
+    ],
+    "highest_traffic_weight": [
+      {
+        "route": "BLR-DEL",
+        "origin": "BLR",
+        "destination": "DEL",
+        "current_index": 119.76546353346681,
+        "mom_inflation_pct": 1.5068897843174334,
+        "yoy_inflation_pct": null,
+        "weight": 0.16525320628091658,
+        "traffic_weight": 0.01455557712774697,
+        "contribution": 0.2938106012271674,
+        "volatility": 0.08829569049238166,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-BOM",
+        "origin": "DEL",
+        "destination": "BOM",
+        "current_index": 125.50825921219821,
+        "mom_inflation_pct": 0.6561735512086608,
+        "yoy_inflation_pct": null,
+        "weight": 0.12762458898808582,
+        "traffic_weight": 0.011241231502977565,
+        "contribution": 0.10442030726756417,
+        "volatility": 0.10273382427032135,
+        "status": "OK"
+      },
+      {
+        "route": "BOM-DEL",
+        "origin": "BOM",
+        "destination": "DEL",
+        "current_index": 90.01537113219756,
+        "mom_inflation_pct": -10.095306117893877,
+        "yoy_inflation_pct": null,
+        "weight": 0.1255053093326442,
+        "traffic_weight": 0.011054564392703121,
+        "contribution": -1.2685742764360763,
+        "volatility": 0.07618936898635402,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-HYD",
+        "origin": "DEL",
+        "destination": "HYD",
+        "current_index": 110.43771424124554,
+        "mom_inflation_pct": 2.071144062463226,
+        "yoy_inflation_pct": null,
+        "weight": 0.10426966565070617,
+        "traffic_weight": 0.009184119295593401,
+        "contribution": 0.23365910876832927,
+        "volatility": 0.097074174555957,
+        "status": "OK"
+      },
+      {
+        "route": "CCU-DEL",
+        "origin": "CCU",
+        "destination": "DEL",
+        "current_index": 98.19016861001595,
+        "mom_inflation_pct": -2.4807493215552423,
+        "yoy_inflation_pct": null,
+        "weight": 0.09528418441673589,
+        "traffic_weight": 0.008392674045758748,
+        "contribution": -0.23800240875840256,
+        "volatility": 0.08479743612249747,
+        "status": "OK"
+      }
+    ],
+    "highest_volatility": [
+      {
+        "route": "BOM-BLR",
+        "origin": "BOM",
+        "destination": "BLR",
+        "current_index": 97.85592663075431,
+        "mom_inflation_pct": 1.5069554395625628,
+        "yoy_inflation_pct": null,
+        "weight": 0.07855734059012978,
+        "traffic_weight": 0.0069193660785410544,
+        "contribution": 0.11412440207142578,
+        "volatility": 0.11986138101905087,
+        "status": "OK"
+      },
+      {
+        "route": "BLR-HYD",
+        "origin": "BLR",
+        "destination": "HYD",
+        "current_index": 95.57458824170564,
+        "mom_inflation_pct": 2.97866171706338,
+        "yoy_inflation_pct": null,
+        "weight": 0.07626741465830597,
+        "traffic_weight": 0.006717668367085888,
+        "contribution": 0.21084116176910128,
+        "volatility": 0.11331236482868211,
+        "status": "OK"
+      },
+      {
+        "route": "MAA-DEL",
+        "origin": "MAA",
+        "destination": "DEL",
+        "current_index": 100.37383834212163,
+        "mom_inflation_pct": -1.116261166621213,
+        "yoy_inflation_pct": null,
+        "weight": 0.07496803334383707,
+        "traffic_weight": 0.006603218273397816,
+        "contribution": -0.0849449544195604,
+        "volatility": 0.10699660326356208,
+        "status": "OK"
+      },
+      {
+        "route": "BLR-BOM",
+        "origin": "BLR",
+        "destination": "BOM",
+        "current_index": 107.955073243025,
+        "mom_inflation_pct": -0.9561074624121146,
+        "yoy_inflation_pct": null,
+        "weight": 0.07733778313685509,
+        "traffic_weight": 0.006811946906638981,
+        "contribution": -0.08059605470775878,
+        "volatility": 0.10430617090890357,
+        "status": "OK"
+      },
+      {
+        "route": "DEL-BOM",
+        "origin": "DEL",
+        "destination": "BOM",
+        "current_index": 125.50825921219821,
+        "mom_inflation_pct": 0.6561735512086608,
+        "yoy_inflation_pct": null,
+        "weight": 0.12762458898808582,
+        "traffic_weight": 0.011241231502977565,
+        "contribution": 0.10442030726756417,
+        "volatility": 0.10273382427032135,
+        "status": "OK"
+      }
+    ]
+  },
+  "route_map_objects": [
+    {
+      "origin": "BLR",
+      "destination": "BOM",
+      "origin_lat": 12.9716,
+      "origin_lon": 77.5946,
+      "destination_lat": 19.076,
+      "destination_lon": 72.8777,
+      "inflation_mom": -0.9561074624121146,
+      "inflation_yoy": null,
+      "volatility": 0.10430617090890357,
+      "traffic_weight": 0.006811946906638981,
+      "contribution": -0.08059605470775878,
+      "status": "OK"
+    },
+    {
+      "origin": "BLR",
+      "destination": "DEL",
+      "origin_lat": 12.9716,
+      "origin_lon": 77.5946,
+      "destination_lat": 28.6139,
+      "destination_lon": 77.209,
+      "inflation_mom": 1.5068897843174334,
+      "inflation_yoy": null,
+      "volatility": 0.08829569049238166,
+      "traffic_weight": 0.01455557712774697,
+      "contribution": 0.2938106012271674,
+      "status": "OK"
+    },
+    {
+      "origin": "BLR",
+      "destination": "HYD",
+      "origin_lat": 12.9716,
+      "origin_lon": 77.5946,
+      "destination_lat": 17.385,
+      "destination_lon": 78.4867,
+      "inflation_mom": 2.97866171706338,
+      "inflation_yoy": null,
+      "volatility": 0.11331236482868211,
+      "traffic_weight": 0.006717668367085888,
+      "contribution": 0.21084116176910128,
+      "status": "OK"
+    },
+    {
+      "origin": "BOM",
+      "destination": "BLR",
+      "origin_lat": 19.076,
+      "origin_lon": 72.8777,
+      "destination_lat": 12.9716,
+      "destination_lon": 77.5946,
+      "inflation_mom": 1.5069554395625628,
+      "inflation_yoy": null,
+      "volatility": 0.11986138101905087,
+      "traffic_weight": 0.0069193660785410544,
+      "contribution": 0.11412440207142578,
+      "status": "OK"
+    },
+    {
+      "origin": "BOM",
+      "destination": "DEL",
+      "origin_lat": 19.076,
+      "origin_lon": 72.8777,
+      "destination_lat": 28.6139,
+      "destination_lon": 77.209,
+      "inflation_mom": -10.095306117893877,
+      "inflation_yoy": null,
+      "volatility": 0.07618936898635402,
+      "traffic_weight": 0.011054564392703121,
+      "contribution": -1.2685742764360763,
+      "status": "OK"
+    },
+    {
+      "origin": "CCU",
+      "destination": "DEL",
+      "origin_lat": 22.5726,
+      "origin_lon": 88.3639,
+      "destination_lat": 28.6139,
+      "destination_lon": 77.209,
+      "inflation_mom": -2.4807493215552423,
+      "inflation_yoy": null,
+      "volatility": 0.08479743612249747,
+      "traffic_weight": 0.008392674045758748,
+      "contribution": -0.23800240875840256,
+      "status": "OK"
+    },
+    {
+      "origin": "DEL",
+      "destination": "BOM",
+      "origin_lat": 28.6139,
+      "origin_lon": 77.209,
+      "destination_lat": 19.076,
+      "destination_lon": 72.8777,
+      "inflation_mom": 0.6561735512086608,
+      "inflation_yoy": null,
+      "volatility": 0.10273382427032135,
+      "traffic_weight": 0.011241231502977565,
+      "contribution": 0.10442030726756417,
+      "status": "OK"
+    },
+    {
+      "origin": "DEL",
+      "destination": "HYD",
+      "origin_lat": 28.6139,
+      "origin_lon": 77.209,
+      "destination_lat": 17.385,
+      "destination_lon": 78.4867,
+      "inflation_mom": 2.071144062463226,
+      "inflation_yoy": null,
+      "volatility": 0.097074174555957,
+      "traffic_weight": 0.009184119295593401,
+      "contribution": 0.23365910876832927,
+      "status": "OK"
+    },
+    {
+      "origin": "DEL",
+      "destination": "MAA",
+      "origin_lat": 28.6139,
+      "origin_lon": 77.209,
+      "destination_lat": 13.0827,
+      "destination_lon": 80.2707,
+      "inflation_mom": -2.614555704625654,
+      "inflation_yoy": null,
+      "volatility": 0.07739352343348942,
+      "traffic_weight": 0.006600086155239555,
+      "contribution": -0.22874740941172267,
+      "status": "OK"
+    },
+    {
+      "origin": "MAA",
+      "destination": "DEL",
+      "origin_lat": 13.0827,
+      "origin_lon": 80.2707,
+      "destination_lat": 28.6139,
+      "destination_lon": 77.209,
+      "inflation_mom": -1.116261166621213,
+      "inflation_yoy": null,
+      "volatility": 0.10699660326356208,
+      "traffic_weight": 0.006603218273397816,
+      "contribution": -0.0849449544195604,
+      "status": "OK"
+    }
+  ],
+  "traffic_weight_coverage": 0.08808045214568311,
+  "affordability": null
+}
