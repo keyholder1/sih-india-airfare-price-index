@@ -159,6 +159,17 @@ class TestDuplicates:
         # Not rejected: both remain eligible to reach the index engine.
         assert result.records_rejected == 0
 
+    def test_potential_duplicate_detected_across_differently_formatted_equal_dates(self):
+        # Two sources formatting the same actual date differently must
+        # still land in the same duplicate-grouping bucket -- grouping on
+        # the raw, unparsed date strings would silently treat these as two
+        # different dates and never compare them.
+        base = make_observation(total_fare=5000.0, flight_date="2026-02-10", booking_date="2026-01-01")
+        near = make_observation(total_fare=5010.0, flight_date="2026-02-10T00:00:00", booking_date="2026-01-01T00:00:00")
+        result = validate_fare_batch([base, near])
+        assert result.potential_duplicate_count == 1
+        assert result.flag_reasons.get(rc.POTENTIAL_DUPLICATE) == 1
+
     def test_far_apart_fare_same_route_is_not_a_duplicate(self):
         base = make_observation(total_fare=5000.0, timestamp="2026-01-01T09:00:00")
         different = make_observation(total_fare=9000.0, timestamp="2026-01-01T09:05:00")
@@ -246,6 +257,25 @@ class TestAggregates:
         assert result.completeness.total_records == 10
         assert result.completeness.records_missing_required_fields == 2
         assert result.completeness.completeness_rate == pytest.approx(0.8)
+
+    def test_completeness_rate_ignores_missing_optional_fields_by_default(self):
+        complete = distinct_observations(5)
+        missing_optional = distinct_observations(5, fare_class=None)
+        result = validate_fare_batch(complete + missing_optional)
+        assert result.completeness.records_missing_optional_fields == 5
+        # Default mode: optional-field gaps don't reduce completeness_rate.
+        assert result.completeness.completeness_rate == pytest.approx(1.0)
+
+    def test_completeness_rate_penalizes_missing_optional_fields_when_configured(self):
+        complete = distinct_observations(5)
+        missing_optional = distinct_observations(5, fare_class=None)
+        config = DataQualityConfig(require_optional_fields_for_completeness=True)
+        result = validate_fare_batch(complete + missing_optional, config=config)
+        # Stricter mode: the 5 records missing an optional field no longer
+        # count as complete.
+        assert result.completeness.completeness_rate == pytest.approx(0.5)
+        # Required-field accounting is unaffected by the stricter mode.
+        assert result.completeness.records_missing_required_fields == 0
 
     def test_validity_rate(self):
         valid = distinct_observations(9)
