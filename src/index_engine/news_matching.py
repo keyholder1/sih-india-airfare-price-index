@@ -16,11 +16,19 @@ in the project brief:
 
 Every signal is a bounded [0, 1] score; the total is a weighted sum, also
 bounded to [0, 1]. Nothing here compares fares or touches the index.
+
+Note: signals 2 (airport) and 6 (geographic) are correlated, not fully
+independent — both key off ``article.related_airports`` overlapping this
+route's origin/destination. An article naming this route's specific
+airports gets credit under both (combined weight 0.35), which is a
+deliberate emphasis on airport-specific news, not an accidental double
+-count of six independent inputs — worth knowing when tuning the weights.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Iterable, List, Optional
 
 from .news_models import DEMAND_SUPPLY_EVENT_TYPES, NewsArticle, NewsMatch, RouteMovement
@@ -58,8 +66,20 @@ def _normalize(values: Iterable[str]) -> set:
     return {v.strip().upper() for v in values if v}
 
 
+def _as_utc(dt: datetime) -> datetime:
+    """Normalize to a timezone-aware UTC datetime so two datetimes can
+    always be subtracted, regardless of whether either side is naive or
+    aware. A naive datetime is assumed to already be UTC (matching how
+    ``RouteMovement.as_of`` and ``MockNewsProvider``'s fixture data are
+    constructed) rather than the local timezone — never assume local time
+    for data that may have come from a server-side pipeline."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def _date_proximity_score(article: NewsArticle, movement: RouteMovement, window_days: int) -> float:
-    delta_days = abs((article.published_at - movement.as_of).total_seconds()) / 86400.0
+    delta_days = abs((_as_utc(article.published_at) - _as_utc(movement.as_of)).total_seconds()) / 86400.0
     if delta_days >= window_days:
         return 0.0
     return max(0.0, 1.0 - (delta_days / window_days))
@@ -174,11 +194,24 @@ def rank_articles(
 ) -> List[NewsMatch]:
     """Score every candidate article and return the top matches above
     ``config.min_relevance``, highest relevance first. Ties broken by more
-    recent publication."""
+    recent publication.
+
+    Candidates are de-duplicated by ``url`` first (keeping the first
+    occurrence) — a provider returning the same article twice (or two
+    providers returning the same wire-service story) should not let one
+    article occupy two of the ``top_n`` slots."""
     config = config or MatchingConfig()
+    deduped: List[NewsArticle] = []
+    seen_urls = set()
+    for a in articles:
+        if a.url in seen_urls:
+            continue
+        seen_urls.add(a.url)
+        deduped.append(a)
+
     matches = [
         score_article(a, movement, airlines_on_route=airlines_on_route, date_window_days=config.date_window_days)
-        for a in articles
+        for a in deduped
     ]
     matches = [m for m in matches if m.relevance_score >= config.min_relevance]
     matches.sort(key=lambda m: (m.relevance_score, m.article.published_at), reverse=True)

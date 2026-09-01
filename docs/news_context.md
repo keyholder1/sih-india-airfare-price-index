@@ -173,6 +173,15 @@ for route, context in context_by_route.items():
     print(to_dashboard_text(context))
 ```
 
+`to_dashboard_text` defaults to `ascii_only=True`, rendering event-type
+markers as `[LABEL]` instead of emoji — safe to `print()` on any console,
+including a stock Windows terminal (`cp1252`/`cp437` stdout), which raises
+`UnicodeEncodeError` on most of the emoji otherwise. Pass
+`to_dashboard_text(context, ascii_only=False)` only when the output target
+is known to be UTF-8. A real web dashboard should render straight from
+`to_dashboard_dict(context)` (which always includes the `emoji` field)
+rather than parsing this string either way.
+
 `attach_news_context` only calls the provider for routes whose `mom`/`yoy`
 change already exceeds `significance_threshold_pct` — routine noise never
 triggers a news search. Swap `MockNewsProvider()` for a real

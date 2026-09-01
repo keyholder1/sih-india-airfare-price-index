@@ -17,7 +17,7 @@ why claims are phrased as "coincided with" rather than "caused by".
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Iterable, List, Optional
 
 from .context_signals import ContextSignalProvider, ContextSignalResult
@@ -94,7 +94,7 @@ def route_movement_from_row(
         change_pct=change_pct,
         metric=metric,  # type: ignore[arg-type]
         period=period,
-        as_of=as_of or datetime.utcnow(),
+        as_of=as_of or datetime.now(timezone.utc),
     )
 
 
@@ -289,7 +289,7 @@ def to_dashboard_dict(result: NewsContextResult) -> dict:
     }
 
 
-def to_dashboard_text(result: NewsContextResult) -> str:
+def to_dashboard_text(result: NewsContextResult, ascii_only: bool = True) -> str:
     """Human-readable rendering matching the project brief's mockup, e.g.::
 
         AIRFARE SPIKE
@@ -306,7 +306,17 @@ def to_dashboard_text(result: NewsContextResult) -> str:
         1. Headline
            Reuters . 14 Aug 2026
            Read original article -> https://...
-    """
+
+    ``ascii_only`` (default ``True``) renders event-type markers as plain
+    ``[LABEL]`` tags instead of emoji. Default on because this function's
+    documented use is printing to a terminal, and a stock Windows console
+    (``cp1252``/``cp437`` stdout) raises ``UnicodeEncodeError`` on most of
+    the emoji in ``_EVENT_TYPE_EMOJI`` — reproduced on this project's own
+    dev environment. Pass ``ascii_only=False`` for a target that is known
+    to be UTF-8 (a web view, a file opened with ``encoding="utf-8"``); the
+    emoji are always available regardless via ``to_dashboard_dict``, which
+    a real web dashboard should render from directly rather than parsing
+    this string."""
     m = result.movement
     label = "AIRFARE SPIKE" if m.direction == "increase" else "AIRFARE DROP"
     lines = [label, f"{m.origin} -> {m.destination}", f"{m.change_pct:+.1f}%", ""]
@@ -315,8 +325,9 @@ def to_dashboard_text(result: NewsContextResult) -> str:
         lines.append("Potential related factors:")
         lines.append("")
         for et in result.potential_factors:
-            emoji = _EVENT_TYPE_EMOJI.get(et, "")
-            lines.append(f"{emoji} {_EVENT_TYPE_LABEL.get(et, et)}".strip())
+            label_text = _EVENT_TYPE_LABEL.get(et, et)
+            marker = f"[{label_text.upper()}]" if ascii_only else _EVENT_TYPE_EMOJI.get(et, "")
+            lines.append(f"{marker} {label_text}".strip())
         lines.append("")
 
     if result.matches:

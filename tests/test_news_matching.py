@@ -3,7 +3,7 @@ route matching, airport matching, airline matching, date-window matching,
 and relevance ranking. Uses hand-built NewsArticle fixtures, not the mock
 provider's demo data, so each signal can be tested independently."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from index_engine.news_matching import MatchingConfig, rank_articles, score_article
 from index_engine.news_models import NewsArticle, RouteMovement
@@ -25,8 +25,14 @@ def _article(
     airports=None,
     airlines=None,
     routes=None,
-    url="https://example-news.test/a1",
+    url=None,
 ):
+    # Default URL is derived from the headline (not a fixed constant) so
+    # distinct articles in the same test don't collide and get silently
+    # de-duplicated by rank_articles's url-based dedup.
+    if url is None:
+        slug = headline.lower().replace(" ", "-")
+        url = f"https://example-news.test/{slug}"
     return NewsArticle(
         headline=headline, source="Test Source", published_at=ANCHOR + timedelta(days=days_offset),
         url=url, event_type=event_type, summary="A test summary.",
@@ -131,6 +137,58 @@ def test_rank_articles_respects_top_n():
     config = MatchingConfig(date_window_days=10, min_relevance=0.0, top_n=3)
     ranked = rank_articles(movement, articles, config=config)
     assert len(ranked) == 3
+
+
+# --- timezone handling ---------------------------------------------------
+
+
+def test_timezone_aware_article_does_not_crash_against_naive_movement():
+    # A real news API will almost always return tz-aware timestamps (ISO
+    # 8601 with an offset); RouteMovement.as_of built the documented
+    # default way is naive. This must not raise.
+    movement = _movement(as_of=ANCHOR)  # naive
+    aware_article = _article(headline="TZ aware", days_offset=0, event_type="CAPACITY_REDUCTION")
+    aware_article = NewsArticle(
+        headline=aware_article.headline, source=aware_article.source,
+        published_at=ANCHOR.replace(tzinfo=timezone.utc), url=aware_article.url,
+        event_type=aware_article.event_type, related_airports=["BLR", "DEL"],
+    )
+    match = score_article(aware_article, movement)
+    assert "date_proximity" in match.matched_signals
+
+
+def test_timezone_aware_article_same_instant_scores_full_date_proximity():
+    naive_movement = _movement(as_of=ANCHOR)
+    same_instant_aware = NewsArticle(
+        headline="Same instant", source="S", published_at=ANCHOR.replace(tzinfo=timezone.utc),
+        url="https://example-news.test/same-instant", event_type="OTHER",
+    )
+    match = score_article(same_instant_aware, naive_movement, date_window_days=10)
+    assert "date_proximity" in match.matched_signals
+
+
+def test_both_sides_timezone_aware_scores_correctly():
+    aware_movement = _movement(as_of=ANCHOR.replace(tzinfo=timezone.utc))
+    aware_article = NewsArticle(
+        headline="Both aware", source="S", published_at=(ANCHOR + timedelta(days=1)).replace(tzinfo=timezone.utc),
+        url="https://example-news.test/both-aware", event_type="OTHER",
+    )
+    match = score_article(aware_article, aware_movement, date_window_days=10)
+    assert "date_proximity" in match.matched_signals
+
+
+# --- deduplication ---------------------------------------------------
+
+
+def test_rank_articles_deduplicates_identical_urls():
+    same_url = "https://example-news.test/duplicate-story"
+    first = _article(headline="First outlet's headline", url=same_url, airports=["BLR", "DEL"], routes=["BLR-DEL"])
+    duplicate = _article(headline="Same story re-fetched", url=same_url, airports=["BLR", "DEL"], routes=["BLR-DEL"])
+    other = _article(headline="Unrelated story", url="https://example-news.test/other")
+    config = MatchingConfig(date_window_days=10, min_relevance=0.0, top_n=5)
+    ranked = rank_articles(_movement(), [first, duplicate, other], config=config)
+    urls = [m.article.url for m in ranked]
+    assert urls.count(same_url) == 1
 
 
 def test_relevance_score_is_bounded_between_zero_and_one():

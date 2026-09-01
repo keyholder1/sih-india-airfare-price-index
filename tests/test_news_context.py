@@ -6,6 +6,7 @@ that running this layer never changes any index/analytics number."""
 from datetime import datetime
 
 import pandas as pd
+import pytest
 
 from index_engine import AirfarePriceIndex, IndexConfig
 from index_engine.mock_news_provider import DEMO_ARTICLES, MockNewsProvider
@@ -152,6 +153,25 @@ def test_dashboard_dict_never_claims_causation():
     disclaimer = dashboard["disclaimer"].lower()
     assert "caused" not in disclaimer
     assert "coincided" in disclaimer or "not a causal" in disclaimer or "not confirmed" in disclaimer
+
+
+def test_dashboard_text_default_has_no_emoji_and_is_cp1252_encodable():
+    service = NewsContextService(MockNewsProvider(), config=NewsContextConfig(min_relevance=0.1))
+    result = service.get_context(_movement())
+    text = to_dashboard_text(result)
+    # Must never raise -- this is the exact failure mode on a stock
+    # Windows console (cp1252 stdout) with emoji in the string.
+    text.encode("cp1252")
+    assert "[" in text  # ascii bracket markers used instead of emoji
+
+
+def test_dashboard_text_ascii_only_false_restores_emoji():
+    service = NewsContextService(MockNewsProvider(), config=NewsContextConfig(min_relevance=0.1))
+    result = service.get_context(_movement())
+    text = to_dashboard_text(result, ascii_only=False)
+    if result.potential_factors:
+        with pytest.raises(UnicodeEncodeError):
+            text.encode("cp1252")
 
 
 def test_dashboard_text_includes_route_and_change_pct():

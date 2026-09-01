@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Dict, List, Literal, Optional
+from urllib.parse import urlparse
 
 #: Controlled vocabulary for what kind of real-world event an article
 #: describes. Kept as a ``Literal`` (not an ``enum.Enum``) to match the rest
@@ -86,6 +87,12 @@ class NewsArticle:
             raise ValueError(f"event_type must be one of {EVENT_TYPES}, got {self.event_type!r}")
         if not self.url:
             raise ValueError("NewsArticle.url must be the original publisher URL and cannot be empty")
+        parsed = urlparse(self.url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError(
+                f"NewsArticle.url must be an absolute http(s) URL pointing at the original publisher, "
+                f"got {self.url!r}"
+            )
 
     def to_dict(self) -> dict:
         d = asdict(self)
