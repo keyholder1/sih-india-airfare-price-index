@@ -77,9 +77,13 @@ def _flag_outliers(df: pd.DataFrame, config: IndexConfig) -> pd.Series:
 def clean_observations(df: pd.DataFrame, config: IndexConfig, total_input: int) -> Tuple[pd.DataFrame, CleaningReport]:
     """Remove duplicates and outliers, returning survivors plus a report.
 
-    ``total_input`` is the count of rows before validation, so the report
-    reflects everything that happened to the original dataset, not just
-    what happened inside this function.
+    ``total_input`` is the count of rows entering *this* function — i.e.
+    after validation, before cleaning (``index.py`` calls this with
+    ``len(valid)``). The ``CleaningReport`` returned here only accounts
+    for what happens inside this function; ``index.py``'s
+    ``_merge_cleaning_report`` re-derives the true original-dataset
+    ``total_input``/``total_removed`` by additionally folding in whatever
+    validation() rejected upstream, which this function never sees.
     """
     removed_by_reason: dict = {}
 

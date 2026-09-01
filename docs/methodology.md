@@ -142,12 +142,30 @@ national index's month-over-month point change is:
 Contribution_i = weight_i × (RouteIndex_i[t] − RouteIndex_i[t-1 month])
 ```
 
-These contributions sum exactly to the national index's point change,
-which is what makes "route X drove Y points of this month's move" a
-provable statement rather than a hand-wavy one. (For the geometric
-aggregation this decomposition is only approximate, since a weighted
-geometric mean's change does not split linearly across components — this
-is stated explicitly in the code and output.)
+`weight_i` here is **not** the raw table-wide `weight_normalized` (which
+sums to 1.0 across every route in the weights table, whether or not it has
+data this period). §9's national index itself renormalizes over only the
+routes that are `OK` *in that period* — dividing by the sum of
+`weight_normalized` over that usable subset, not by 1.0, since coverage
+below 100% is the normal case, not an edge case (see the 8.8%
+traffic-coverage example in §13). `contribution.py` renormalizes by that
+same usable-subset total before multiplying, so `weight_i` above always
+means "this route's share of the routes actually usable this period," not
+its share of the full weights table.
+
+With that renormalization, these contributions sum exactly to the
+national index's point change **provided the same set of routes is `OK`
+in both periods being compared** — which is what makes "route X drove Y
+points of this month's move" a provable statement rather than a hand-wavy
+one, for the routes that condition holds for. If route composition
+*changed* between the two periods (a route went from `OK` to not, or vice
+versa), the engine raises a quality flag on `IndexResult.quality_flags`
+saying exactly that, and the contribution decomposition is only partial
+for the affected routes — part of that period's MoM/YoY move reflects the
+compositional shift itself, not pure price movement. (For the geometric
+aggregation this decomposition is only approximate regardless, since a
+weighted geometric mean's change does not split linearly across
+components — this is stated explicitly in the code and output.)
 
 ## 11. Outlier handling
 

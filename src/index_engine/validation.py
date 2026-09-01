@@ -22,8 +22,20 @@ REASON_SAME_ORIGIN_DESTINATION = "SAME_ORIGIN_DESTINATION"
 REASON_IMPOSSIBLE_BOOKING_HORIZON = "IMPOSSIBLE_BOOKING_HORIZON"
 
 
-def validate_observations(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def validate_observations(df: pd.DataFrame, fare_field: str = "total_fare") -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Split raw observations into structurally valid and rejected rows.
+
+    ``fare_field`` should be ``config.fare_field`` (see ``IndexConfig``) —
+    ``total_fare`` is always required and always validated regardless,
+    since it's a mandatory schema column per docs/data_contract.md, but
+    when a different column has been configured as *the* comparable fare
+    (e.g. ``base_fare``), that column is validated too. Without this, a
+    row with a missing/invalid value in a non-default ``fare_field`` would
+    survive validation (only ``total_fare`` would be checked), get counted
+    in ``observations_used``/``cleaning_report.total_valid``, and then
+    silently contribute nothing to the actual representative-fare
+    calculation once ``normalization.add_standardized_fare`` coerces it to
+    NaN — overstating how many observations actually informed the number.
 
     Returns
     -------
@@ -51,6 +63,9 @@ def validate_observations(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]
     reasons[bad_date & reasons.isna()] = REASON_INVALID_DATE
 
     bad_fare = work["total_fare"].isna() | (work["total_fare"] <= 0)
+    if fare_field != "total_fare" and fare_field in work.columns:
+        work[fare_field] = pd.to_numeric(work[fare_field], errors="coerce")
+        bad_fare = bad_fare | work[fare_field].isna() | (work[fare_field] <= 0)
     reasons[bad_fare & reasons.isna()] = REASON_INVALID_FARE
 
     same_od = work["origin"].astype(str).str.upper() == work["destination"].astype(str).str.upper()
