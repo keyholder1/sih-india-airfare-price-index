@@ -1,0 +1,58 @@
+{
+  "run_id": "run_20260901T124344Z",
+  "mode": "mock",
+  "started_at": "2026-09-01T12:43:44.109197+00:00",
+  "finished_at": "2026-09-01T12:44:04.439114+00:00",
+  "routes_requested": 5,
+  "routes_successful": 5,
+  "routes_failed": 0,
+  "observations_collected": 90,
+  "source_summaries": [
+    {
+      "source": "MockIndiGo",
+      "routes_requested": 5,
+      "routes_successful": 5,
+      "routes_failed": 0,
+      "routes_attempted": [
+        "BLR-DEL",
+        "BOM-DEL",
+        "DEL-BLR",
+        "DEL-BOM",
+        "HYD-DEL"
+      ],
+      "observations_collected": 30,
+      "failure_breakdown": {}
+    },
+    {
+      "source": "MockAirIndia",
+      "routes_requested": 5,
+      "routes_successful": 5,
+      "routes_failed": 0,
+      "routes_attempted": [
+        "BLR-DEL",
+        "BOM-DEL",
+        "DEL-BLR",
+        "DEL-BOM",
+        "HYD-DEL"
+      ],
+      "observations_collected": 30,
+      "failure_breakdown": {}
+    },
+    {
+      "source": "MockOTA_ClearSky",
+      "routes_requested": 5,
+      "routes_successful": 5,
+      "routes_failed": 0,
+      "routes_attempted": [
+        "BLR-DEL",
+        "BOM-DEL",
+        "DEL-BLR",
+        "DEL-BOM",
+        "HYD-DEL"
+      ],
+      "observations_collected": 30,
+      "failure_breakdown": {}
+    }
+  ],
+  "failure_reasons": {}
+}

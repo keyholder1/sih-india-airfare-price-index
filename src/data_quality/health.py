@@ -69,10 +69,18 @@ def compute_source_health(
         oldest = newest = None
         data_age_seconds = None
         if "timestamp" in group.columns:
-            ts = pd.to_datetime(group["timestamp"], errors="coerce", format="mixed").dropna()
+            # utc=True normalizes every parsed value to tz-aware UTC
+            # regardless of whether the source's timestamp string carried an
+            # offset (a real scraper's ISO-8601-with-offset output) or not
+            # (this prototype's naive synthetic fixtures) — otherwise mixing
+            # the two raises "Cannot subtract tz-naive and tz-aware
+            # datetime-like objects" below. A naive input is treated as UTC.
+            ts = pd.to_datetime(group["timestamp"], errors="coerce", format="mixed", utc=True).dropna()
             if len(ts):
                 oldest, newest = ts.min(), ts.max()
-                ref = reference_time if reference_time is not None else pd.Timestamp.now()
+                ref = reference_time if reference_time is not None else pd.Timestamp.now(tz="UTC")
+                if ref.tzinfo is None:
+                    ref = ref.tz_localize("UTC")
                 data_age_seconds = max(0.0, (ref - newest).total_seconds())
 
         attempt = attempts_by_source.get(source)

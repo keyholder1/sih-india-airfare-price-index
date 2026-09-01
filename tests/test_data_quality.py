@@ -302,6 +302,23 @@ class TestAggregates:
         assert by_source["airline_zero"].status == rc.HEALTH_FAILED
         assert by_source["airline_zero"].route_success_rate == 0.0
 
+    def test_source_health_handles_mixed_naive_and_timezone_aware_timestamps(self):
+        # A real scraper (see src/scraper/mock_source.py) stamps
+        # timezone-aware ISO timestamps (datetime.now(timezone.utc)); this
+        # prototype's synthetic fixtures use naive ones (conftest.py's
+        # default "2026-01-01T00:00:00"). Both must coexist in one batch,
+        # and an explicit naive reference_time must not crash either --
+        # this is the exact scenario that used to raise "Cannot subtract
+        # tz-naive and tz-aware datetime-like objects".
+        naive = distinct_observations(3, source="naive_source", timestamp="2026-01-01T00:00:00")
+        aware = distinct_observations(3, source="aware_source", timestamp="2026-01-01T00:00:00+00:00")
+        result = validate_fare_batch(naive + aware, reference_time=pd.Timestamp("2026-01-02"))  # naive reference_time
+        by_source = {s.source: s for s in result.source_health}
+        assert by_source["naive_source"].data_age_seconds is not None
+        assert by_source["aware_source"].data_age_seconds is not None
+        assert by_source["naive_source"].data_age_seconds >= 0
+        assert by_source["aware_source"].data_age_seconds >= 0
+
     def test_source_health_route_attempts_populate_route_metrics(self):
         obs = distinct_observations(5, source="airline_A")
         attempts = [{"source": "airline_A", "routes_requested": 50, "routes_successful": 47}]
