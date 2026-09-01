@@ -184,9 +184,21 @@ def apply_flags(work: pd.DataFrame, config: DataQualityConfig, reference_time: p
         add_flag(missing_optional, rc.MISSING_OPTIONAL_FIELD)
 
     if "timestamp" in work.columns:
-        ts = pd.to_datetime(work["timestamp"], errors="coerce", format="mixed")
+        # utc=True normalizes every parsed value to tz-aware UTC regardless
+        # of whether a given row's timestamp string carried an offset (a
+        # real scraper's ISO-8601-with-offset output, e.g.
+        # scraper.mock_source) or not (this prototype's naive synthetic
+        # fixtures) -- mixing the two in one batch otherwise raises
+        # "Mixed timezones detected" during parsing itself, or "Cannot
+        # subtract tz-naive and tz-aware datetime-like objects" during the
+        # age comparison below. A naive input is treated as UTC. Same fix
+        # as health.compute_source_health's identical timestamp handling.
+        ts = pd.to_datetime(work["timestamp"], errors="coerce", format="mixed", utc=True)
         ref = reference_time if reference_time is not None else ts.max()
         if ref is not None and pd.notna(ref):
+            ref = pd.Timestamp(ref)
+            if ref.tzinfo is None:
+                ref = ref.tz_localize("UTC")
             max_age = pd.Timedelta(config.stale_observation_max_age)
             age = ref - ts
             stale = age.notna() & (age > max_age)

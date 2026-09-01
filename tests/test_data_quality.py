@@ -238,6 +238,27 @@ class TestFlags:
         result = validate_fare_batch(recent + [old])
         assert result.flag_reasons.get(rc.STALE_OBSERVATION) == 1
 
+    def test_stale_observation_check_handles_mixed_naive_and_aware_timestamps(self):
+        # A real scraper (see src/scraper/mock_source.py) stamps
+        # timezone-aware ISO timestamps; this prototype's synthetic
+        # fixtures use naive ones. Both must coexist in one batch without
+        # crashing -- this used to raise "Cannot subtract tz-naive and
+        # tz-aware datetime-like objects" inside apply_flags's
+        # STALE_OBSERVATION check specifically (a second occurrence of the
+        # same bug class already fixed in health.compute_source_health).
+        naive = make_observation(timestamp="2026-01-20T00:00:00", observation_id="NAIVE")
+        aware = make_observation(timestamp="2026-01-20T00:00:00+00:00", observation_id="AWARE")
+        result = validate_fare_batch([naive, aware])  # no explicit reference_time
+        assert result.records_valid + result.records_flagged == 2
+
+    def test_stale_observation_check_handles_naive_reference_time_against_aware_data(self):
+        aware = [
+            make_observation(timestamp="2025-01-01T00:00:00+00:00", observation_id=f"A{i}", flight_date=f"2026-02-{i + 1:02d}")
+            for i in range(2)
+        ]
+        result = validate_fare_batch(aware, reference_time=pd.Timestamp("2026-01-02"))  # naive reference_time
+        assert result.flag_reasons.get(rc.STALE_OBSERVATION) == 2
+
     def test_unusual_booking_horizon_flagged(self):
         obs = make_observation(flight_date="2027-06-01", booking_date="2026-01-01")  # ~510 days out
         result = validate_fare_batch([obs])
@@ -331,6 +352,23 @@ class TestAggregates:
         by_source = {s.source: s for s in result.source_health}
         assert by_source["airline_zero"].status == rc.HEALTH_FAILED
         assert by_source["airline_zero"].route_success_rate == 0.0
+
+    def test_source_health_handles_mixed_naive_and_timezone_aware_timestamps(self):
+        # A real scraper (see src/scraper/mock_source.py) stamps
+        # timezone-aware ISO timestamps (datetime.now(timezone.utc)); this
+        # prototype's synthetic fixtures use naive ones (conftest.py's
+        # default "2026-01-01T00:00:00"). Both must coexist in one batch,
+        # and an explicit naive reference_time must not crash either --
+        # this is the exact scenario that used to raise "Cannot subtract
+        # tz-naive and tz-aware datetime-like objects".
+        naive = distinct_observations(3, source="naive_source", timestamp="2026-01-01T00:00:00")
+        aware = distinct_observations(3, source="aware_source", timestamp="2026-01-01T00:00:00+00:00")
+        result = validate_fare_batch(naive + aware, reference_time=pd.Timestamp("2026-01-02"))  # naive reference_time
+        by_source = {s.source: s for s in result.source_health}
+        assert by_source["naive_source"].data_age_seconds is not None
+        assert by_source["aware_source"].data_age_seconds is not None
+        assert by_source["naive_source"].data_age_seconds >= 0
+        assert by_source["aware_source"].data_age_seconds >= 0
 
     def test_source_health_route_attempts_populate_route_metrics(self):
         obs = distinct_observations(5, source="airline_A")
