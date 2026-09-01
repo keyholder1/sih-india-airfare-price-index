@@ -74,7 +74,7 @@ class AirfarePriceIndex:
         df = self._to_dataframe(observations)
         total_input = len(df)
 
-        valid, rejected = validation.validate_observations(df)
+        valid, rejected = validation.validate_observations(df, fare_field=self.config.fare_field)
         enriched = self._enrich_or_empty(valid)
 
         clean, partial_report = cleaning.clean_observations(enriched, self.config, total_input=len(valid))
@@ -90,18 +90,29 @@ class AirfarePriceIndex:
         observed_routes = set(route_period_fares["route"].unique())
 
         weights_raw = self._weights if self._weights is not None else weighting.generate_synthetic_weights(sorted(observed_routes))
-        weights_for_current = weighting.weights_for_period(weights_raw, current_period)
-        weighted_routes = set(weights_for_current["route"].unique()) if len(weights_for_current) else set()
-        weights_for_current = weighting.normalize_weights(weights_for_current)
+        # Anchored to base_period, not current_period: this is meant to be
+        # the fixed, Laspeyres-style expenditure basket (see
+        # docs/methodology.md §9/§10), applied identically to every period
+        # being compared within this calculate() call. Anchoring it to
+        # current_period instead would let the *same* historical month's
+        # national index silently differ depending on which current_period
+        # a caller queried it from, the moment effective-dated weights
+        # (effective_from/effective_to) are ever actually used -- today
+        # both weight generators leave those open-ended, so this has no
+        # observable effect yet, but the basket must still be pinned to
+        # the period the index claims to be fixed at.
+        weights_basket = weighting.weights_for_period(weights_raw, self.base_period)
+        weighted_routes = set(weights_basket["route"].unique()) if len(weights_basket) else set()
+        weights_basket = weighting.normalize_weights(weights_basket)
 
         all_routes = sorted(observed_routes | weighted_routes)
 
         prev_month = shift_period(current_period, -1)
         prev_year = shift_period(current_period, -12)
 
-        current_results = self._route_indices(route_period_fares, weights_for_current, current_period, all_routes)
-        prev_month_results = self._route_indices(route_period_fares, weights_for_current, prev_month, all_routes)
-        prev_year_results = self._route_indices(route_period_fares, weights_for_current, prev_year, all_routes)
+        current_results = self._route_indices(route_period_fares, weights_basket, current_period, all_routes)
+        prev_month_results = self._route_indices(route_period_fares, weights_basket, prev_month, all_routes)
+        prev_year_results = self._route_indices(route_period_fares, weights_basket, prev_year, all_routes)
 
         national_current = aggregation.national_index(current_results, self.config.aggregation_method)
         national_prev_month = aggregation.national_index(prev_month_results, self.config.aggregation_method)

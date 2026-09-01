@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from index_engine.volatility import (
     HIGH,
@@ -6,6 +7,7 @@ from index_engine.volatility import (
     VolatilityConfig,
     calculate_volatility,
     coefficient_of_variation,
+    compute_route_volatility,
     log_return_stddev,
 )
 
@@ -90,3 +92,23 @@ def test_log_return_stddev_needs_at_least_two_periods():
     series = pd.Series([5000, 5250, 5000, 5500], index=["2026-01", "2026-02", "2026-03", "2026-04"])
     result = log_return_stddev(series)
     assert result is not None and result > 0
+
+
+def test_log_return_stddev_method_raises_through_calculate_volatility_instead_of_returning_none():
+    # calculate_volatility()/compute_route_volatility() only ever see one
+    # period's cross-sectional fares -- they cannot compute a log-return
+    # series (which needs multiple periods per route). Previously this
+    # silently produced an all-None/INSUFFICIENT_DATA result regardless of
+    # how much data existed; it must now fail loudly instead.
+    df = _obs_df({"BLR-DEL": [5000, 5100, 5200, 5300]})
+    config = VolatilityConfig(method="log_return_stddev")
+    with pytest.raises(NotImplementedError):
+        calculate_volatility(df, "2026-08", config)
+    with pytest.raises(NotImplementedError):
+        compute_route_volatility(df, "2026-08", config)
+
+
+def test_coefficient_of_variation_method_is_unaffected_by_the_log_return_guard():
+    df = _obs_df({"BLR-DEL": [5000, 5100, 5200, 5300]})
+    result = calculate_volatility(df, "2026-08", VolatilityConfig(method="coefficient_of_variation"))
+    assert result.national_volatility is not None

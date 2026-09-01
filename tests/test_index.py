@@ -93,6 +93,54 @@ def test_route_contributions_sum_to_national_index_change_for_arithmetic_aggrega
     assert abs(total_contribution - (result.national_index - prev_month_national)) < 0.5
 
 
+def test_observations_used_excludes_rows_with_invalid_non_default_fare_field():
+    good_rows = _route_rows("BLR", "DEL", "2026-01-15", 5000.0, n=5)
+    bad_row = make_observation(
+        origin="BLR", destination="DEL", flight_date="2026-01-15",
+        booking_date="2026-01-01", total_fare=5000.0, base_fare=None,
+    )
+    engine = AirfarePriceIndex(
+        base_period="2026-01",
+        config=IndexConfig(base_period="2026-01", fare_field="base_fare", min_observations_per_route_period=1),
+    )
+    result = engine.calculate(to_df(good_rows + [bad_row]), current_period="2026-01")
+    # The bad_fare row is rejected at validation, not silently counted as
+    # "used" while contributing nothing to the median.
+    assert result.observations_used == 5
+    assert result.cleaning_report.total_valid == 5
+    assert result.cleaning_report.removed_by_reason.get("INVALID_FARE") == 1
+
+
+def test_weight_basket_is_anchored_to_base_period_not_current_period():
+    # DEL-BOM's weight only becomes effective from 2026-06 onward -- as of
+    # base_period (2026-01) it must NOT be part of the fixed weight
+    # basket, even though current_period (2026-08) is well past its
+    # effective_from date. If the basket were (incorrectly) selected as of
+    # current_period instead of base_period, DEL-BOM would be included and
+    # would get a non-None weight_normalized.
+    rows = (
+        _route_rows("BLR", "DEL", "2026-01-15", 5000.0)
+        + _route_rows("BLR", "DEL", "2026-08-15", 5000.0)
+        + _route_rows("DEL", "BOM", "2026-01-15", 5000.0)
+        + _route_rows("DEL", "BOM", "2026-08-15", 5000.0)
+    )
+    weights = pd.DataFrame(
+        [
+            {"origin": "BLR", "destination": "DEL", "weight": 0.5, "effective_from": None, "effective_to": None},
+            {"origin": "DEL", "destination": "BOM", "weight": 0.5, "effective_from": "2026-06-01", "effective_to": None},
+        ]
+    )
+    engine = AirfarePriceIndex(base_period="2026-01", weights=weights, config=IndexConfig(base_period="2026-01"))
+    result = engine.calculate(to_df(rows), current_period="2026-08")
+
+    by_route = {r.route: r for r in result.route_indices}
+    assert by_route["DEL-BOM"].weight_normalized is None
+    # BLR-DEL is the only route left in the basket -> renormalized to 1.0.
+    assert by_route["BLR-DEL"].weight_normalized == pytest.approx(1.0)
+    # The national index is therefore driven entirely by BLR-DEL.
+    assert result.national_index == pytest.approx(by_route["BLR-DEL"].route_index)
+
+
 def test_new_route_has_no_index_but_is_flagged():
     rows = _route_rows("BLR", "DEL", "2026-01-15", 5000.0) + _route_rows("CCU", "DEL", "2026-08-15", 4000.0)
     engine = AirfarePriceIndex(base_period="2026-01")
