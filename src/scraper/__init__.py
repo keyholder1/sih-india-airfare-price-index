@@ -20,6 +20,9 @@ live mode, provenance, and known limitations.
 
 from .config import ScraperConfig, ScraperMode
 from .indigo_source import IndiGoCredentials, IndiGoSource, load_credentials_from_env
+from .serpapi_source import SerpApiCredentials, SerpApiSource
+from .serpapi_source import load_credentials_from_env as load_serpapi_credentials_from_env
+from .yatra_source import YatraSource
 from .live_sources import EVALUATED_SOURCES, LIVE_SOURCES, SourceProfile, UnavailableLiveSource
 from .mock_source import MockFareSource, default_mock_sources
 from .models import RawFareObservation, ScrapeRunReport, SourceCallResult, SourceRunSummary
@@ -68,6 +71,10 @@ __all__ = [
     "IndiGoSource",
     "IndiGoCredentials",
     "load_credentials_from_env",
+    "SerpApiSource",
+    "SerpApiCredentials",
+    "load_serpapi_credentials_from_env",
+    "YatraSource",
 ]
 
 __version__ = "0.1.0"

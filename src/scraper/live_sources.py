@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from typing import List, Literal
 
 from .indigo_source import IndiGoSource
+from .serpapi_source import SerpApiSource
 from .models import SourceCallResult
 from .source import FareSource, SearchRequest
 
@@ -57,6 +58,37 @@ class SourceProfile:
 #: Representative, not exhaustive — see docs/scraper.md for the rationale
 #: on why a representative sample is the right amount of evaluation here.
 EVALUATED_SOURCES: List[SourceProfile] = [
+    SourceProfile(
+        name="SerpApi (Google Flights)",
+        domain="serpapi.com",
+        access_method="THIRD_PARTY_API",
+        robots_txt_status="NOT_APPLICABLE",  # a documented self-service API, not a scraped site
+        api_exists=True,
+        requires_credentials=True,
+        rate_limits_known="Depends on plan tier — check account dashboard for the current allotment before relying on it for a full daily route x horizon sweep",
+        fields_available=(
+            "Real per-itinerary fares in the requested currency, airline, flight numbers, "
+            "times, duration, stops, plus a bonus per-route historical price_history series "
+            "not currently mapped into observations (see serpapi_source.py docstring)."
+        ),
+        limitations=(
+            "This is Google's own aggregated view of fares (scraped and resold by SerpApi as "
+            "a commercial product), NOT a direct airline feed — tagged "
+            "source='serpapi_google_flights' specifically so it's never confused with a "
+            "direct-airline observation downstream. price is per-ITINERARY, not per-leg — a "
+            "connecting flight's two legs share one price, verified against a real captured "
+            "response. Free/low tiers have limited request volume; verify your plan supports "
+            "the route x booking-horizon volume this project needs before relying on it daily."
+        ),
+        reason_unavailable=(
+            "Not actually unavailable — this is the project's first fully working live "
+            "source (see scraper.serpapi_source.SerpApiSource), verified against a real "
+            "DEL-BLR search returning genuine IndiGo/Air India/Air India Express/Akasa Air "
+            "fares in INR. Still requires SERPAPI_API_KEY to be configured; without it, "
+            "returns the same honest SOURCE_UNAVAILABLE as every credential-gated source here."
+        ),
+        empirically_tested_this_session=True,
+    ),
     SourceProfile(
         name="IndiGo",
         domain="www.goindigo.in",
@@ -263,6 +295,7 @@ class UnavailableLiveSource(FareSource):
 #: call time, not hard-coded per instance.
 _ADAPTER_SOURCES_BY_NAME = {
     "IndiGo": IndiGoSource,
+    "SerpApi (Google Flights)": SerpApiSource,
 }
 
 #: What ``ScraperConfig(mode="live")`` uses when the caller doesn't supply
