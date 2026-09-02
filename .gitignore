@@ -10,3 +10,4 @@ examples/route_coverage_curve.png
 examples/last_result.json
 .venv/
 venv/
+.env*

@@ -20,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from index_engine import AirfarePriceIndex, IndexConfig, InsufficientDataError, __version__
 
+from .forecasting_routes import router as forecasting_router
 from .schemas import (
     CalculateRequest,
     IndexResultOut,
@@ -43,6 +44,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Forecasting endpoints (national/route forecasts, baseline evaluation,
+# CPI benchmark, booking-horizon analysis) -- see api/forecasting_routes.py.
+# Purely additive: every route below this point is unchanged.
+app.include_router(forecasting_router)
 
 
 def _build_config(base_period: str, config_in) -> IndexConfig:
