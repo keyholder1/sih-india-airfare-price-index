@@ -22,6 +22,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Set required env vars BEFORE importing the app
 os.environ.setdefault("API_KEY", "test-key-12345")
 os.environ.setdefault("FRONTEND_ORIGIN", "http://localhost:3000")
+# Force the deterministic mock news provider -- GdeltNewsProvider makes a
+# live network call, which has no place in an automated test suite (see
+# src/engine/real_adapters.py's provider-selection docstring).
+os.environ.setdefault("NEWS_PROVIDER", "mock")
 
 from api.main import app  # noqa: E402
 

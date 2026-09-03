@@ -56,3 +56,11 @@ def get_data_quality() -> Dict[str, Any]:
         return analytics_service.get_data_quality()
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Data quality failed: {exc}")
+
+
+@router.get("/forecast", summary="National baseline forecast + MoSPI CPI benchmark")
+def get_forecast() -> Dict[str, Any]:
+    try:
+        return analytics_service.get_forecast()
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Forecast failed: {exc}")
