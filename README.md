@@ -52,3 +52,7 @@ total_fare, currency` (plus optional `fare_class`, `fare_type`, `base_fare`,
 ## Backend API module (`api/`)
 
 FastAPI backend that exposes the Index Engine and related modules to the frontend dashboard. See [`api/README.md`](api/README.md) for setup, endpoints, and authentication.
+
+## Frontend dashboard (`frontend/`)
+
+React/Vite dashboard for the index, route inflation, and data quality views. See [`frontend/README.md`](frontend/README.md) if present, or `frontend/package.json` for setup.
