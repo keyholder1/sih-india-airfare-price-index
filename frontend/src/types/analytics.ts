@@ -18,6 +18,12 @@ export type RouteStatus =
 
 export type VolatilityClass = "LOW" | "MODERATE" | "HIGH" | "INSUFFICIENT_DATA";
 
+/** Backend provenance classification (api/services/analytics_service.py's
+ *  data_source field, sourced from data_access.classify_provenance).
+ *  MIXED (some real + some mock observations) must never be treated as
+ *  REAL. */
+export type DataSource = "REAL" | "SYNTHETIC" | "MIXED" | "UNAVAILABLE";
+
 /** One route's index for one period (price_index.route_indices[]). */
 export interface RouteIndex {
   route: string;
@@ -153,11 +159,13 @@ export interface AnalyticsResult {
   route_map_objects: RouteMapObject[];
   traffic_weight_coverage: number | null;
   affordability: unknown | null;
-  /** True only when the observations behind this payload are real scraped
-   *  fares, not the synthetic demo dataset. Authoritative -- never infer
+  /** Provenance of the observations behind this payload -- REAL only
+   *  when every observation is genuinely scraped, MIXED when some are
+   *  mock, SYNTHETIC when all are mock/demo, UNAVAILABLE when there was
+   *  nothing to compute from at all. Authoritative -- never infer
    *  provenance from DATA_MODE or from whether a value happens to be
-   *  non-null (see data_access.load_validated_observations). */
-  is_real: boolean;
+   *  non-null (see data_access.classify_provenance). */
+  data_source: DataSource;
 }
 
 /** One point of `POST /index/timeseries` output (index_timeseries.json). */

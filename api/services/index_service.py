@@ -95,5 +95,14 @@ def get_timeseries(
             offset=offset,
             has_more=(offset + limit) < total,
         ),
-        data_source=page[0].data_source if page else "synthetic",
+        # Every point that has a computed index shares the same batch
+        # provenance (see RealIndexEngine.get_timeseries); a point can
+        # only differ by being "unavailable" (no coverage for that
+        # month). Summarize from the first point that actually has data,
+        # so one uncovered month at the start of the range doesn't make
+        # the whole response look unavailable.
+        data_source=next(
+            (p.data_source for p in page if p.data_source != "unavailable"),
+            page[0].data_source if page else "unavailable",
+        ),
     )

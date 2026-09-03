@@ -31,8 +31,8 @@ ticket-price display.
 ROUTE COVERAGE STRATEGY
 
 Current:
-10 routes
-8.8% passenger coverage
+5 routes
+6.05% passenger coverage
 
 Recommended (near-term, Tier 1+2):
 50 routes
@@ -52,7 +52,7 @@ returns shape: steep gains in the first ~50–100 routes, then a very long,
 flat tail (90% coverage would need 695 of India's 2,228 real domestic
 routes — not realistic for a hackathon-built scraper).
 
-Top additional routes by real traffic (beyond the current 10): Delhi–Kolkata,
+Top additional routes by real traffic (beyond the current 5): Delhi–Kolkata,
 Delhi–Pune, Delhi–Mumbai(alt.), Delhi–Ahmedabad, Bengaluru–Kolkata,
 Delhi–Srinagar, Bengaluru–Pune, Delhi–Guwahati, Delhi–Patna.
 
@@ -63,8 +63,8 @@ Delhi–Srinagar, Bengaluru–Pune, Delhi–Guwahati, Delhi–Patna.
    window, ODbL-licensed extraction of DGCA's published statistics) — not
    a plausible-looking synthetic number.
 2. **We measure our own representativeness and report it honestly.** Our
-   10 scraped routes represent 8.8% of India's domestic passenger
-   traffic — we say this out loud rather than letting "we scraped 10
+   5 scraped routes represent 6.05% of India's domestic passenger
+   traffic — we say this out loud rather than letting "we scraped 5
    routes" imply more coverage than it has. Honesty about a small number
    is more credible than an inflated one.
 3. **Inflation and importance are kept separate, on purpose.** Every
@@ -113,11 +113,11 @@ Delhi–Srinagar, Bengaluru–Pune, Delhi–Guwahati, Delhi–Patna.
    month can be distorted by holidays/weather/disruptions; 12 months is
    more stable, and the window is computed from the latest data available,
    never hard-coded.
-10. *What does "8.8% traffic coverage" actually mean, and why so low?* —
+10. *What does "6.05% traffic coverage" actually mean, and why so low?* —
     India has 2,228 distinct real-world directional domestic routes; our
-    10 scraped routes, while major trunk routes, are a small fraction of
+    5 scraped routes, while major trunk routes, are a small fraction of
     that universe by count (though a larger fraction by passenger volume
-    than 10/2228 would suggest, since trunk routes carry disproportionate traffic).
+    than 5/2228 would suggest, since trunk routes carry disproportionate traffic).
 
 **Volatility**
 11. *What's the difference between the price index and volatility?* — The
@@ -154,7 +154,7 @@ Delhi–Srinagar, Bengaluru–Pune, Delhi–Guwahati, Delhi–Patna.
 19. *How do you handle a route that appears or disappears?* — `NEW_ROUTE`
     / `DISCONTINUED` statuses, both excluded from the index calculation
     but visible in the output and quality flags.
-20a. *Why only 10 routes / why not scrape all 2,228?* — Diminishing
+20a. *Why only 5 routes / why not scrape all 2,228?* — Diminishing
     returns: the top 50 routes already capture 30.7% of national traffic;
     reaching 90% would need 695 routes. We prioritize by real passenger
     traffic and recommend expanding to Tier 1+2 (50 routes) as a realistic

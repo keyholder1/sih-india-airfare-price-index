@@ -49,13 +49,29 @@ def _read_jsonl_dir(dir_path: Path) -> List[Dict[str, Any]]:
     return records
 
 
-def _is_all_mock(observations: List[Dict[str, Any]]) -> bool:
-    """Whether every observation is explicitly flagged as mock/synthetic
-    scraper output. Empty is treated as "no real data" (True), not "real
-    by absence" -- see docs/scraper.md "Raw vs validated storage"."""
+#: Provenance classification for a batch of observations. A batch is
+#: REAL only when *every* observation is genuinely scraped; MIXED when
+#: some but not all are -- a mixed batch must never be silently promoted
+#: to REAL just because at least one real observation is present.
+PROVENANCE_REAL = "REAL"
+PROVENANCE_SYNTHETIC = "SYNTHETIC"
+PROVENANCE_MIXED = "MIXED"
+PROVENANCE_UNAVAILABLE = "UNAVAILABLE"
+
+
+def classify_provenance(observations: List[Dict[str, Any]]) -> str:
+    """REAL only when every observation is non-mock, SYNTHETIC only when
+    every observation is mock, MIXED when both appear, UNAVAILABLE when
+    there are no observations at all -- see docs/scraper.md "Raw vs
+    validated storage"."""
     if not observations:
-        return True
-    return all(obs.get("is_mock", True) for obs in observations)
+        return PROVENANCE_UNAVAILABLE
+    mock_flags = [bool(obs.get("is_mock", True)) for obs in observations]
+    if all(mock_flags):
+        return PROVENANCE_SYNTHETIC
+    if not any(mock_flags):
+        return PROVENANCE_REAL
+    return PROVENANCE_MIXED
 
 
 def _generate_fallback_observations(n_months: int = 8) -> List[Dict[str, Any]]:
@@ -93,25 +109,25 @@ def _generate_fallback_observations(n_months: int = 8) -> List[Dict[str, Any]]:
     return observations
 
 
-def load_validated_observations() -> Tuple[List[Dict[str, Any]], bool]:
-    """Returns (observations, is_real). ``is_real`` is True only when at
-    least one persisted, non-mock validated observation exists -- see
-    ``_is_all_mock``. Falls back to a synthetic demo dataset (is_real=False)
-    when nothing has been scraped and validated yet."""
+def load_validated_observations() -> Tuple[List[Dict[str, Any]], str]:
+    """Returns (observations, provenance) -- see ``classify_provenance``
+    for the PROVENANCE_* values. Falls back to a synthetic demo dataset
+    (PROVENANCE_SYNTHETIC) when nothing has been scraped and validated
+    yet."""
     observations = _read_jsonl_dir(REPO_ROOT / "data" / "validated" / "fares")
     if not observations:
-        return _generate_fallback_observations(), False
-    return observations, not _is_all_mock(observations)
+        return _generate_fallback_observations(), PROVENANCE_SYNTHETIC
+    return observations, classify_provenance(observations)
 
 
-def load_raw_observations() -> Tuple[List[Dict[str, Any]], bool]:
+def load_raw_observations() -> Tuple[List[Dict[str, Any]], str]:
     """Same as :func:`load_validated_observations` but from the raw
     (pre-data_quality) tree -- used by the quality endpoint, which needs
     to see what was rejected/flagged, not just what survived."""
     observations = _read_jsonl_dir(REPO_ROOT / "data" / "raw" / "fares")
     if not observations:
-        return _generate_fallback_observations(), False
-    return observations, not _is_all_mock(observations)
+        return _generate_fallback_observations(), PROVENANCE_SYNTHETIC
+    return observations, classify_provenance(observations)
 
 
 def available_periods(observations: List[Dict[str, Any]]) -> List[str]:

@@ -1049,5 +1049,5 @@
   ],
   "traffic_weight_coverage": 0.08808045214568311,
   "affordability": null,
-  "is_real": false
+  "data_source": "SYNTHETIC"
 }

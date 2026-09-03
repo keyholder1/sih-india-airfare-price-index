@@ -147,7 +147,7 @@ sums to 1.0 across every route in the weights table, whether or not it has
 data this period). §9's national index itself renormalizes over only the
 routes that are `OK` *in that period* — dividing by the sum of
 `weight_normalized` over that usable subset, not by 1.0, since coverage
-below 100% is the normal case, not an edge case (see the 8.8%
+below 100% is the normal case, not an edge case (see the 6.05%
 traffic-coverage example in §13). `contribution.py` renormalizes by that
 same usable-subset total before multiplying, so `weight_i` above always
 means "this route's share of the routes actually usable this period," not
@@ -277,12 +277,12 @@ characteristics are documented in `data/traffic/README.md`; the summary:
    "how much should this route count *among the routes we can measure*."
 6. **Traffic coverage metric.** `traffic_weight_coverage` = the sum of
    `national_weight` across only the routes we have usable airfare data
-   for. In this repo's 10-route example universe (real data,
-   2025-06–2026-05 window): **8.8%** of India's domestic passenger
+   for. In this repo's current 5-route demo universe (BLR-DEL, DEL-BLR,
+   DEL-BOM, BOM-DEL, HYD-DEL): **6.05%** of India's domestic passenger
    traffic — a small, honest number precisely because there are 2,228
    distinct real-world directional city pairs and this prototype only
-   scrapes 10 of them. This is a materially stronger representativeness
-   argument than "we have 10 routes" on its own, and it is honest in
+   scrapes 5 of them. This is a materially stronger representativeness
+   argument than "we have 5 routes" on its own, and it is honest in
    both directions — it doesn't inflate a small sample into a misleading
    percentage.
 7. **City name ↔ IATA code mapping.** DGCA publishes city names
@@ -387,15 +387,18 @@ returns?
 
 **Two different "10 routes" numbers appear in this project's reports, and
 they are not the same thing — this distinction matters and is stated
-explicitly to avoid an apparent contradiction:**
+explicitly to avoid an apparent contradiction. (The demo universe has
+since shrunk further, to 5 routes at 6.05% — see below — but the
+distinction itself still applies to whatever the current demo count is.)**
 
-- **8.8%** = the traffic coverage of our *actual* current 10-route demo
-  universe (BLR-DEL, DEL-BOM, BOM-BLR, DEL-HYD, BLR-HYD, MAA-DEL, DEL-MAA,
-  BOM-DEL, CCU-DEL, BLR-BOM) — chosen for illustrative metro-pair variety,
-  not because they are literally the 10 highest-traffic routes nationwide.
-  This is the number quoted everywhere else in this repo as "current
-  coverage" (`traffic.build_dgca_weights`'s `traffic_weight_coverage`
-  for those specific 10 routes).
+- **6.05%** = the traffic coverage of our *actual* current 5-route demo
+  universe (BLR-DEL, DEL-BLR, DEL-BOM, BOM-DEL, HYD-DEL) — a subset of an
+  earlier, larger 10-route demo (BLR-DEL, DEL-BOM, BOM-BLR, DEL-HYD,
+  BLR-HYD, MAA-DEL, DEL-MAA, BOM-DEL, CCU-DEL, BLR-BOM), chosen for
+  illustrative metro-pair variety, not because they are literally the
+  highest-traffic routes nationwide. This is the number quoted everywhere
+  else in this repo as "current coverage" (`traffic.build_dgca_weights`'s
+  `traffic_weight_coverage` for those specific 5 routes).
 - **10.4%** (first row of the table below) = the coverage achieved by the
   hypothetical *best possible* 10 routes ranked purely by real traffic —
   i.e. what `route_selection.coverage_at_n(ranked, 10)` returns. It is a
@@ -471,8 +474,8 @@ official DGCA recommendation) and `data/routes/recommended_routes.json`
 `MUMBAI (MUMBAI)` variant — 12 of the top 100 routes fall in this category
 and are deliberately left unmapped rather than guessed).
 
-**Distinguishing coverage metrics — do not conflate:** `10 routes` (a
-route *count*) and `8.8% traffic coverage` (a *passenger-weighted* share)
+**Distinguishing coverage metrics — do not conflate:** `5 routes` (a
+route *count*) and `6.05% traffic coverage` (a *passenger-weighted* share)
 answer different questions; a route count alone says nothing about how
 much of India's actual air travel it represents. And **critically: traffic
 coverage is not CPI representativeness.** Passenger traffic is a

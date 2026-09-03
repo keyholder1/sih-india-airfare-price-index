@@ -95,6 +95,7 @@ function mockForecast(): ForecastPayload {
       notes: "Mock mode has no forecasting fixture.",
     },
     cpi_benchmark: null,
+    data_source: "SYNTHETIC",
   };
 }
 
@@ -105,29 +106,50 @@ export function getForecast(): Promise<ForecastPayload> {
 
 /**
  * Provenance of the current figures. Read directly from the backend's own
- * `is_real` field (api/services/analytics_service.py, sourced from
- * data_access.load_validated_observations) -- never guessed client-side.
- * A non-null national_index says nothing about provenance: the engine
+ * `data_source` field (api/services/analytics_service.py, sourced from
+ * data_access.classify_provenance) -- never guessed client-side. A
+ * non-null national_index says nothing about provenance: the engine
  * happily computes an index from synthetic data too.
  */
 export async function getDataStatus(): Promise<DataStatus> {
   const analytics = await getAnalytics();
-  const hasRealData = analytics.is_real;
-  if (hasRealData) {
-    return {
-      level: "LIVE",
-      label: "Live scraped data",
-      detail: "Airfare observations behind these figures were collected by the scraper, not fabricated.",
-      asOf: analytics.price_index.current_period,
-    };
+  const asOf = analytics.price_index.current_period;
+
+  switch (analytics.data_source) {
+    case "REAL":
+      return {
+        level: "LIVE",
+        label: "Live fare data",
+        detail: "Every airfare observation behind these figures was collected by the scraper, not fabricated.",
+        asOf,
+      };
+    case "MIXED":
+      return {
+        level: "MIXED",
+        label: "Mixed real + synthetic data",
+        detail:
+          "Some airfare observations behind these figures are real scraper output and some are " +
+          "synthetic/demo. This dataset is not purely real, so these numbers are not a clean " +
+          "measurement of Indian airfare inflation.",
+        asOf,
+      };
+    case "UNAVAILABLE":
+      return {
+        level: "UNAVAILABLE",
+        label: "No data available",
+        detail: "No airfare observations were found to compute these figures from.",
+        asOf,
+      };
+    case "SYNTHETIC":
+    default:
+      return {
+        level: "SYNTHETIC",
+        label: "Demonstration / synthetic data",
+        detail:
+          "Airfare observations behind these figures are synthetic. The statistical " +
+          "pipeline, DGCA passenger-traffic weights and route metadata are real; the " +
+          "fare values are not, and these numbers are not a measurement of Indian airfare inflation.",
+        asOf,
+      };
   }
-  return {
-    level: "SYNTHETIC",
-    label: "Demonstration / synthetic data",
-    detail:
-      "Airfare observations behind these figures are synthetic. The statistical " +
-      "pipeline, DGCA passenger-traffic weights and route metadata are real; the " +
-      "fare values are not, and these numbers are not a measurement of Indian airfare inflation.",
-    asOf: analytics.price_index.current_period,
-  };
 }

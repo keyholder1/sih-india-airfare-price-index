@@ -150,17 +150,17 @@ class RouteIndexResponse(BaseModel):
     """Index result for a single route."""
 
     route: str = Field(..., description="IATA route code.")
-    index: float = Field(..., description="Route-level index value.")
+    index: Optional[float] = Field(..., description="Route-level index value. Null when this route had no computable index (e.g. no base-period fare) -- never fabricated.")
     mom: Optional[float] = Field(None, description="Month-over-month change (%).")
     weight: float = Field(..., description="Weight of this route in the composite index.")
     contribution: float = Field(..., description="Absolute contribution to the national index.")
-    data_source: str = Field(..., description="'real' or 'synthetic'.")
+    data_source: str = Field(..., description="'real', 'synthetic', 'mixed', or 'unavailable'.")
 
 
 class IndexCalculateResponse(BaseModel):
     """Response for POST /api/v1/index/calculate."""
 
-    national_index: float = Field(..., description="Composite national airfare price index value.")
+    national_index: Optional[float] = Field(..., description="Composite national airfare price index value. Null when there was no coverage to compute one -- never fabricated.")
     mom: Optional[float] = Field(None, description="Month-over-month change (%).")
     yoy: Optional[float] = Field(None, description="Year-over-year change (%).")
     base_period: str = Field(..., description="Base period used.")
@@ -168,7 +168,7 @@ class IndexCalculateResponse(BaseModel):
     route_indices: list[RouteIndexResponse] = Field(..., description="Per-route index breakdowns.")
     quality_score: Optional[float] = Field(None, description="Quality score (0-1) for the input data.")
     flags: list[str] = Field(default_factory=list, description="Processing flags and warnings.")
-    data_source: str = Field(..., description="'real' or 'synthetic'. Indicates whether the result is computed from real or stub data.")
+    data_source: str = Field(..., description="'real', 'synthetic', 'mixed', or 'unavailable'. Indicates whether the result is computed from real, stub, or a mix of both kinds of data.")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional engine metadata.")
 
     model_config = {
@@ -200,10 +200,10 @@ class TimeseriesPointResponse(BaseModel):
     """A single point in the index time series."""
 
     period: str = Field(..., description="Period in YYYY-MM format.")
-    index: float = Field(..., description="Index value for this period.")
+    index: Optional[float] = Field(..., description="Index value for this period. Null when no index could be computed for this period -- never fabricated as a plausible-looking drift value.")
     mom: Optional[float] = Field(None, description="Month-over-month change (%).")
     yoy: Optional[float] = Field(None, description="Year-over-year change (%).")
-    data_source: str = Field(..., description="'real' or 'synthetic'.")
+    data_source: str = Field(..., description="'real', 'synthetic', 'mixed', or 'unavailable' -- 'unavailable' when index is null.")
 
 
 class TimeseriesResponse(BaseModel):
@@ -211,7 +211,7 @@ class TimeseriesResponse(BaseModel):
 
     data: list[TimeseriesPointResponse] = Field(..., description="Time series data points.")
     pagination: PaginationMeta = Field(..., description="Pagination metadata.")
-    data_source: str = Field(..., description="'real' or 'synthetic'. Applies to all points in this response.")
+    data_source: str = Field(..., description="'real', 'synthetic', 'mixed', or 'unavailable'. Summarizes the observation batch this series was computed from; individual points may still differ (see each point's own data_source).")
 
     model_config = {
         "json_schema_extra": {
@@ -236,13 +236,13 @@ class RouteAnalysisResponse(BaseModel):
     """Analysis result for a single route."""
 
     route: str = Field(..., description="IATA route code.")
-    route_index: float = Field(..., description="Route-level index value.")
+    route_index: Optional[float] = Field(..., description="Route-level index value. Null when no index could be computed for this route -- never fabricated.")
     mom: Optional[float] = Field(None, description="Month-over-month movement (%).")
     weight: float = Field(..., description="Weight in the composite index.")
     contribution: float = Field(..., description="Absolute contribution to the national index.")
     traffic_coverage: float = Field(..., description="Estimated traffic coverage (0-1).")
     status: str = Field(..., description="Route status: 'active', 'inactive', or 'new'.")
-    data_source: str = Field(..., description="'real' or 'synthetic'.")
+    data_source: str = Field(..., description="'real', 'synthetic', 'mixed', or 'unavailable'.")
 
 
 class RouteListResponse(BaseModel):
@@ -404,7 +404,7 @@ class AlertItem(BaseModel):
 class DashboardSummaryResponse(BaseModel):
     """Response for GET /api/v1/dashboard/summary."""
 
-    index: float = Field(..., description="Current national index value.")
+    index: Optional[float] = Field(..., description="Current national index value. Null when no index could be computed -- never fabricated.")
     mom: Optional[float] = Field(None, description="Month-over-month change (%).")
     yoy: Optional[float] = Field(None, description="Year-over-year change (%).")
     routes: list[RouteAnalysisResponse] = Field(..., description="All tracked routes with their latest analysis.")

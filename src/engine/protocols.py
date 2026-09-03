@@ -23,18 +23,23 @@ class RouteIndex:
     """Index result for a single route."""
 
     route: str
-    index: float
+    #: None when the engine could not compute this route's index (e.g. no
+    #: base-period fare) -- never fabricated as 0.0, which would read as a
+    #: measured 100-point crash.
+    index: Optional[float]
     mom: Optional[float]  # month-over-month change (%)
     weight: float
     contribution: float
-    data_source: str  # "real" | "synthetic"
+    data_source: str  # "real" | "synthetic" | "mixed" | "unavailable"
 
 
 @dataclass
 class IndexResult:
     """Complete result of an index calculation."""
 
-    national_index: float
+    #: None when the engine had no coverage to compute a national index
+    #: for this period -- never fabricated as 100.0.
+    national_index: Optional[float]
     mom: Optional[float]  # month-over-month change (%)
     yoy: Optional[float]  # year-over-year change (%)
     base_period: str
@@ -51,7 +56,9 @@ class TimeseriesPoint:
     """A single point in the index time series."""
 
     period: str
-    index: float
+    #: None when this period had no computable index -- never fabricated
+    #: as a plausible-looking drift value. See data_source for why.
+    index: Optional[float]
     mom: Optional[float]
     yoy: Optional[float]
     data_source: str  # "real" | "synthetic"
@@ -102,13 +109,14 @@ class RouteAnalysis:
     """Analysis result for a single route."""
 
     route: str
-    route_index: float
+    #: None when this route had no computable index -- never fabricated.
+    route_index: Optional[float]
     mom: Optional[float]
     weight: float
     contribution: float
     traffic_coverage: float
     status: str  # "active" | "inactive" | "new"
-    data_source: str  # "real" | "synthetic"
+    data_source: str  # "real" | "synthetic" | "mixed" | "unavailable"
 
 
 @dataclass

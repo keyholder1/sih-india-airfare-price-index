@@ -8,7 +8,7 @@ export * from "./forecast";
  * Until the scraper/backend is wired in, airfare data is SYNTHETIC and the
  * UI must say so. DGCA traffic / route metadata / coordinates are REAL.
  */
-export type DataLevel = "LIVE" | "PUBLIC" | "SYNTHETIC";
+export type DataLevel = "LIVE" | "PUBLIC" | "SYNTHETIC" | "MIXED" | "UNAVAILABLE";
 
 export interface DataStatus {
   level: DataLevel;

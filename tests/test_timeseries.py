@@ -30,16 +30,21 @@ class TestTimeseries:
         assert "yoy" in point
         assert "data_source" in point
 
-    def test_synthetic_label(self, client):
-        """All timeseries points should be labeled synthetic."""
+    def test_uncovered_range_is_null_not_fabricated(self, client):
+        """A range with no observation coverage must come back as null,
+        honestly labeled 'unavailable' -- never a fabricated, plausible-
+        looking index value (see src.engine.real_adapters.RealIndexEngine
+        .get_timeseries)."""
         resp = client.get("/api/v1/index/timeseries", params={
             "start_date": "2026-01",
             "end_date": "2026-03",
         })
         data = resp.json()
-        assert data["data_source"] == "synthetic"
         for point in data["data"]:
-            assert point["data_source"] == "synthetic"
+            if point["index"] is None:
+                assert point["data_source"] == "unavailable"
+            else:
+                assert point["data_source"] in ("real", "synthetic", "mixed")
 
     def test_pagination_metadata(self, client):
         """Pagination metadata should be correct."""

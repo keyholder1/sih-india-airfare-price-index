@@ -146,7 +146,10 @@ class RealIndexEngine:
         route_indices = [
             RouteIndex(
                 route=ri.route,
-                index=ri.route_index if ri.route_index is not None else 0.0,
+                # Never fabricated: a route with no computable index (e.g.
+                # no base-period fare) reports null, not a fake 0.0 --
+                # 0.0 would read as a measured 100-point fare crash.
+                index=ri.route_index,
                 mom=None,  # not computed for this single-shot call; see get_timeseries for MoM
                 weight=ri.weight_normalized or 0.0,
                 contribution=contribution_by_route.get(ri.route) or 0.0,
@@ -156,7 +159,9 @@ class RealIndexEngine:
         ]
 
         return IndexResult(
-            national_index=result.national_index if result.national_index is not None else 100.0,
+            # Never fabricated: no coverage means null, not a fake 100.0
+            # baseline that would read as a real "no change" measurement.
+            national_index=result.national_index,
             mom=result.mom_change_pct,
             yoy=result.yoy_change_pct,
             base_period=base_period,
@@ -178,7 +183,7 @@ class RealIndexEngine:
         if not periods:
             return []
 
-        observations, is_real_data = data_access.load_validated_observations()
+        observations, provenance = data_access.load_validated_observations()
         df = pd.DataFrame(observations)
         weights, _weights_real = data_access.build_weights(observations)
         data_periods = data_access.available_periods(observations)
@@ -192,22 +197,28 @@ class RealIndexEngine:
             return result.national_index
 
         points: List[TimeseriesPoint] = []
-        for i, period in enumerate(periods):
+        for period in periods:
             current_idx = index_for(period)
             if current_idx is None:
-                # No real coverage for this specific month -- fall back to
-                # a deterministic, clearly-labeled synthetic point so the
-                # response always has one point per requested month (the
-                # documented contract), never a gap.
-                current_idx = 100.0 + 0.8 * i
-                point_source = "synthetic"
-            else:
-                point_source = "real" if is_real_data else "synthetic"
+                # No coverage for this specific month -- a missing month
+                # is not an index value. Report it as such rather than
+                # drawing a fake, plausible-looking measurement.
+                points.append(
+                    TimeseriesPoint(
+                        period=period,
+                        index=None,
+                        mom=None,
+                        yoy=None,
+                        data_source=data_access.PROVENANCE_UNAVAILABLE.lower(),
+                    )
+                )
+                continue
 
+            point_source = provenance.lower()
             prev_month_idx = index_for(shift_period(period, -1))
             prev_year_idx = index_for(shift_period(period, -12))
-            mom = _safe_pct_change(current_idx if point_source != "synthetic" else None, prev_month_idx)
-            yoy = _safe_pct_change(current_idx if point_source != "synthetic" else None, prev_year_idx)
+            mom = _safe_pct_change(current_idx, prev_month_idx)
+            yoy = _safe_pct_change(current_idx, prev_year_idx)
 
             points.append(
                 TimeseriesPoint(
@@ -239,12 +250,12 @@ class RealDataQualityEngine:
     def assess_quality(self, observations: Optional[List[Dict[str, Any]]] = None) -> QualityReport:
         if observations:
             raw = observations
-            is_real = not all(o.get("is_mock", True) for o in observations)
+            provenance = data_access.classify_provenance(observations)
         else:
-            raw, is_real = data_access.load_raw_observations()
+            raw, provenance = data_access.load_raw_observations()
 
         result = data_quality_mod.validate_fare_batch(raw)
-        data_source = "real" if is_real else "synthetic"
+        data_source = provenance.lower()
 
         route_health = [
             RouteHealth(
@@ -296,7 +307,7 @@ class RealRouteAnalyticsEngine:
     """Real implementation of ``RouteAnalyticsProtocol``."""
 
     def get_route_analysis(self) -> List[RouteAnalysis]:
-        observations, is_real_data = data_access.load_validated_observations()
+        observations, provenance = data_access.load_validated_observations()
         base_period, current_period = _period_bounds(observations)
         df = pd.DataFrame(observations)
         weights, weights_real = data_access.build_weights(observations)
@@ -310,7 +321,12 @@ class RealRouteAnalyticsEngine:
             prev_by_route = {}
 
         contribution_by_route = {c.route: c.contribution_points for c in current.route_contributions}
-        data_source = "real" if (is_real_data and weights_real) else "synthetic"
+        # weights_real=False (equal-weight fallback, not DGCA-derived)
+        # still taints the result to synthetic regardless of observation
+        # provenance; otherwise report the observations' own provenance
+        # (REAL/SYNTHETIC/MIXED/UNAVAILABLE) -- never collapse MIXED into
+        # "real".
+        data_source = provenance.lower() if weights_real else "synthetic"
 
         status_map = {"OK": "active", "NEW_ROUTE": "new"}
 
@@ -325,7 +341,9 @@ class RealRouteAnalyticsEngine:
             results.append(
                 RouteAnalysis(
                     route=ri.route,
-                    route_index=ri.route_index if ri.route_index is not None else 0.0,
+                    # Never fabricated: a route with no computable index
+                    # reports null, not a fake 0.0.
+                    route_index=ri.route_index,
                     mom=round(mom, 2) if mom is not None else None,
                     weight=ri.weight_normalized or 0.0,
                     contribution=contribution_by_route.get(ri.route) or 0.0,

@@ -38,7 +38,7 @@ def get_dashboard_summary() -> DashboardSummaryResponse:
         mom = latest.mom
         yoy = latest.yoy
     else:
-        national_index = 100.0
+        national_index = None
         mom = None
         yoy = None
 

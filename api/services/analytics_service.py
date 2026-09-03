@@ -57,7 +57,7 @@ def _period_bounds(observations: List[Dict[str, Any]]) -> tuple[str, str]:
 def get_analytics() -> Dict[str, Any]:
     """Full AnalyticsResult.to_dict() -- national index, volatility,
     route inflation, rankings, route map objects, traffic coverage."""
-    observations, is_real = data_access.load_validated_observations()
+    observations, provenance = data_access.load_validated_observations()
     base_period, current_period = _period_bounds(observations)
     df = pd.DataFrame(observations)
     weights, weights_real = data_access.build_weights(observations)
@@ -74,11 +74,13 @@ def get_analytics() -> Dict[str, Any]:
     result.traffic_weight_coverage = traffic_coverage
 
     payload = result.to_dict()
-    # Provenance of the observations behind this payload -- see
-    # data_access.load_validated_observations's own is_real contract.
-    # The frontend must show this rather than guess it (see
-    # frontend/src/data/client.ts's getDataStatus).
-    payload["is_real"] = is_real
+    # Provenance of the observations behind this payload -- one of
+    # data_access.PROVENANCE_REAL / _SYNTHETIC / _MIXED / _UNAVAILABLE.
+    # A MIXED batch (some real, some mock observations) must never be
+    # reported as REAL. The frontend must render its badge from this
+    # field rather than guess it (see frontend/src/data/client.ts's
+    # getDataStatus).
+    payload["data_source"] = provenance
     # Not part of AnalyticsResult.to_dict() upstream -- inflation_matrix()
     # is a separate method on the result object (see index_engine.analytics
     # .AnalyticsResult / route_analysis.inflation_matrix). Attached here so
@@ -92,7 +94,7 @@ def get_timeseries(start_date: str, end_date: str) -> List[Dict[str, Any]]:
     """One point per calendar month in [start_date, end_date], in the
     engine's own field names (national_index/mom_change_pct/yoy_change_pct)
     -- see frontend/src/types/analytics.ts's IndexTimeseriesPoint."""
-    observations, _is_real = data_access.load_validated_observations()
+    observations, _provenance = data_access.load_validated_observations()
     df = pd.DataFrame(observations)
     weights, _weights_real = data_access.build_weights(observations)
     data_periods = data_access.available_periods(observations)
@@ -137,7 +139,7 @@ def get_recommended_routes() -> Dict[str, Any]:
 def get_data_quality() -> Dict[str, Any]:
     """Full data_quality.DataQualityResult.to_dict() for whatever raw
     observations are on disk (see data_access.load_raw_observations)."""
-    raw, _is_real = data_access.load_raw_observations()
+    raw, _provenance = data_access.load_raw_observations()
     result = data_quality_mod.validate_fare_batch(raw)
     return result.to_dict()
 
@@ -150,24 +152,30 @@ def get_forecast() -> Dict[str, Any]:
     the same pattern against caller-supplied observations."""
     from forecasting import build_forecasting_dataset, compare_to_mospi_cpi, forecast_national_index, load_mospi_cpi_series
 
-    observations, is_real = data_access.load_validated_observations()
+    observations, provenance = data_access.load_validated_observations()
     base_period, _current_period = _period_bounds(observations)
     df = pd.DataFrame(observations)
     weights, _weights_real = data_access.build_weights(observations)
 
+    # Only a purely REAL batch may be forecast as non-synthetic -- a
+    # MIXED or UNAVAILABLE batch is flagged synthetic too, same as the
+    # provenance rule get_analytics() uses (never promote MIXED to real).
+    is_synthetic = provenance != data_access.PROVENANCE_REAL
+
     dataset = build_forecasting_dataset(
         observations=df, base_period=base_period, weights=weights if len(weights) else None
     )
-    forecast = forecast_national_index(dataset, is_synthetic_data=not is_real)
+    forecast = forecast_national_index(dataset, is_synthetic_data=is_synthetic)
 
     cpi_benchmark: Optional[Dict[str, Any]] = None
     if _MOSPI_CPI_PATH.exists():
         mospi = load_mospi_cpi_series(_MOSPI_CPI_PATH)
-        cpi_benchmark = compare_to_mospi_cpi(dataset, mospi, is_synthetic_airfare_data=not is_real).to_dict()
+        cpi_benchmark = compare_to_mospi_cpi(dataset, mospi, is_synthetic_airfare_data=is_synthetic).to_dict()
         # Never leak the local absolute filesystem path to a client.
         cpi_benchmark["mospi_source_file"] = str(_MOSPI_CPI_PATH.relative_to(data_access.REPO_ROOT))
 
     return {
         "national_forecast": forecast.to_dict(),
         "cpi_benchmark": cpi_benchmark,
+        "data_source": provenance,
     }

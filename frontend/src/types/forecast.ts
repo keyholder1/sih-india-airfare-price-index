@@ -4,6 +4,7 @@
  * mirroring forecasting.results.ForecastResult /
  * forecasting.cpi_results.CPIBenchmarkResult's own to_dict() shapes.
  */
+import type { DataSource } from "./analytics";
 
 export interface NationalForecast {
   forecast_period: string;
@@ -56,4 +57,5 @@ export interface CPIBenchmark {
 export interface ForecastPayload {
   national_forecast: NationalForecast;
   cpi_benchmark: CPIBenchmark | null;
+  data_source: DataSource;
 }
