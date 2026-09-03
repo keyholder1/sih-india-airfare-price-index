@@ -48,3 +48,7 @@ result.to_dict()            # JSON-serializable, ready for a backend to expose
 total_fare, currency` (plus optional `fare_class`, `fare_type`, `base_fare`,
 `taxes`, `fees`, `stops`, `duration`, `baggage`, `availability`, `source`,
 `timestamp` — unused by the engine today but safe to pass through).
+
+## Backend integration
+
+FastAPI backend integration layer is being added in `feature/backend-api` (PR #4).
