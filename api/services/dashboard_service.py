@@ -125,13 +125,22 @@ def get_dashboard_summary() -> DashboardSummaryResponse:
         ),
     )
 
+    # ── Overall data provenance ──────────────────────────────────
+    # "real" only if every contributing engine actually used real data --
+    # a dashboard mixing real and synthetic sources must not claim "real".
+    sub_sources = {r.data_source for r in route_responses} | {quality.data_source}
+    overall_data_source = "real" if sub_sources == {"real"} else "synthetic"
+
     # ── Alerts ────────────────────────────────────────────────────
+    if overall_data_source == "synthetic":
+        alert_message = (
+            "Dashboard is using synthetic/demo data -- no real scraped "
+            "observations are loaded yet. See src/engine/data_access.py."
+        )
+    else:
+        alert_message = "Dashboard reflects real scraped observations."
     alerts: list[AlertItem] = [
-        AlertItem(
-            level="info",
-            message="Dashboard is using synthetic stub data. Replace stubs in src/engine/factory.py to use real data.",
-            timestamp=None,
-        ),
+        AlertItem(level="info", message=alert_message, timestamp=None),
     ]
 
     return DashboardSummaryResponse(
@@ -145,5 +154,5 @@ def get_dashboard_summary() -> DashboardSummaryResponse:
         quality=quality,
         coverage=coverage,
         alerts=alerts,
-        data_source="synthetic",
+        data_source=overall_data_source,
     )
