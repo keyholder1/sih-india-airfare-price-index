@@ -25,8 +25,6 @@ from index_engine.mock_news_provider import MockNewsProvider
 from index_engine.news_context import NewsContextService, route_movement_from_row
 from index_engine.route_analysis import RouteInflationRow
 from index_engine.utils import pct_change, shift_period
-from index_engine import traffic as traffic_mod
-from index_engine import weighting as weighting_mod
 
 import data_quality as data_quality_mod
 
@@ -44,7 +42,6 @@ from src.engine.protocols import (
 )
 
 REPO_ROOT = data_access.REPO_ROOT
-DGCA_TRAFFIC_CSV = str(REPO_ROOT / "data" / "traffic" / "dgca_domestic_city_pairs.csv")
 
 #: The mock news fixture data (mock_news_provider.DEMO_ARTICLES) is
 #: anchored around 2026-08-14 (see that module's docstring). No real news
@@ -85,24 +82,6 @@ def _period_bounds(observations: List[Dict[str, Any]]) -> tuple[str, str]:
     if not periods:
         raise ValueError("No periods available in the loaded observation set.")
     return periods[0], periods[-1]
-
-
-def _build_weights(observations: List[Dict[str, Any]]) -> tuple[pd.DataFrame, bool]:
-    """Real DGCA-traffic-derived weights when every observed route maps to
-    a known city (see city_mapping.IATA_TO_CITY); synthetic (equal-weight)
-    otherwise. Never raises -- a mapping gap degrades to synthetic rather
-    than breaking the endpoint."""
-    routes = data_access.observed_routes(observations)
-    if not routes:
-        return pd.DataFrame(columns=["origin", "destination", "weight"]), False
-    try:
-        weights_df, _diagnostics = traffic_mod.build_dgca_weights(DGCA_TRAFFIC_CSV, routes)
-        if len(weights_df) == 0:
-            raise ValueError("DGCA weights produced no rows for the observed routes.")
-        return weights_df, True
-    except Exception:
-        route_codes = [f"{o}-{d}" for o, d in routes]
-        return weighting_mod.generate_synthetic_weights(route_codes), False
 
 
 def _calculate(df: pd.DataFrame, weights: pd.DataFrame, base_period: str, current_period: str):
@@ -189,7 +168,7 @@ class RealIndexEngine:
 
         observations, is_real_data = data_access.load_validated_observations()
         df = pd.DataFrame(observations)
-        weights, _weights_real = _build_weights(observations)
+        weights, _weights_real = data_access.build_weights(observations)
         data_periods = data_access.available_periods(observations)
         base_period = data_periods[0] if data_periods else periods[0]
 
@@ -308,7 +287,7 @@ class RealRouteAnalyticsEngine:
         observations, is_real_data = data_access.load_validated_observations()
         base_period, current_period = _period_bounds(observations)
         df = pd.DataFrame(observations)
-        weights, weights_real = _build_weights(observations)
+        weights, weights_real = data_access.build_weights(observations)
 
         current = _calculate(df, weights, base_period, current_period)
         prev_month_period = shift_period(current_period, -1)
@@ -363,7 +342,7 @@ class RealNewsContextEngine:
         observations, _is_real_data = data_access.load_validated_observations()
         base_period, current_period = _period_bounds(observations)
         df = pd.DataFrame(observations)
-        weights, _weights_real = _build_weights(observations)
+        weights, _weights_real = data_access.build_weights(observations)
 
         current = _calculate(df, weights, base_period, current_period)
         current_ri = next((r for r in current.route_indices if r.route == route_code), None)

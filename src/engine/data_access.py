@@ -15,7 +15,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+import pandas as pd
+
+from index_engine import traffic as traffic_mod
+from index_engine import weighting as weighting_mod
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
+DGCA_TRAFFIC_CSV = str(REPO_ROOT / "data" / "traffic" / "dgca_domestic_city_pairs.csv")
 
 #: Demo routes used only when no persisted scraper output exists at all
 #: (e.g. a fresh checkout before any scrape has run). Matches the routes
@@ -124,3 +130,21 @@ def observed_routes(observations: List[Dict[str, Any]]) -> List[Tuple[str, str]]
         if obs.get("origin") and obs.get("destination")
     }
     return sorted(routes)
+
+
+def build_weights(observations: List[Dict[str, Any]]) -> Tuple[pd.DataFrame, bool]:
+    """Real DGCA-traffic-derived weights when every observed route maps to
+    a known city (see index_engine.city_mapping.IATA_TO_CITY); synthetic
+    (equal-weight) otherwise. Never raises -- a mapping gap degrades to
+    synthetic rather than breaking the caller. Returns (weights_df, is_real)."""
+    routes = observed_routes(observations)
+    if not routes:
+        return pd.DataFrame(columns=["origin", "destination", "weight"]), False
+    try:
+        weights_df, _diagnostics = traffic_mod.build_dgca_weights(DGCA_TRAFFIC_CSV, routes)
+        if len(weights_df) == 0:
+            raise ValueError("DGCA weights produced no rows for the observed routes.")
+        return weights_df, True
+    except Exception:
+        route_codes = [f"{o}-{d}" for o, d in routes]
+        return weighting_mod.generate_synthetic_weights(route_codes), False
