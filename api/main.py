@@ -1,106 +1,81 @@
-"""FastAPI wrapper around index_engine.
+"""
+FastAPI application entry point.
 
-This is a thin integration layer, not part of the statistical engine
-itself: it only translates HTTP JSON <-> the engine's plain Python/pandas
-interface, so the backend teammate has a stable HTTP contract to build the
-dashboard against without needing to import Python directly.
-
-Run locally:
-
-    uvicorn api.main:app --reload --port 8000
-
-Then open http://127.0.0.1:8000/docs for interactive Swagger docs.
+Run with: ``uvicorn api.main:app --reload``
 """
 
 from __future__ import annotations
 
-import pandas as pd
-from fastapi import FastAPI, HTTPException
+import os
+
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from index_engine import AirfarePriceIndex, IndexConfig, InsufficientDataError, __version__
-
-from .schemas import (
-    CalculateRequest,
-    IndexResultOut,
-    TimeseriesRequest,
+from api.dependencies import verify_api_key
+from api.routes import (
+    index_router,
+    routes_router,
+    quality_router,
+    news_router,
+    analytics_router,
+    dashboard_router,
 )
+from api.forecasting_routes import router as forecasting_router
+
+# Load .env file if present
+load_dotenv()
 
 app = FastAPI(
-    title="Airfare Price Index API",
+    title="India Airfare Price Index API",
     description=(
-        "HTTP wrapper around the SIH Airfare Price Index statistical engine. "
-        "Prototype only — see /docs and the repo's docs/methodology.md."
+        "Backend API for the India Airfare Price Index (SIH) project. "
+        "Exposes the Index Engine and related modules to a frontend dashboard."
     ),
-    version=__version__,
+    version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Prototype-only: wide open CORS so the dashboard teammate can hit this from
-# any local dev origin without configuration. Tighten before any real deploy.
+# ── CORS ──────────────────────────────────────────────────────────
+
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[frontend_origin],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-def _build_config(base_period: str, config_in) -> IndexConfig:
-    if config_in is None:
-        return IndexConfig(base_period=base_period)
-    return IndexConfig(base_period=base_period, **config_in.model_dump())
+# ── Health check (no auth) ────────────────────────────────────────
 
 
-def _build_weights(weights_in):
-    if not weights_in:
-        return None
-    return pd.DataFrame([w.model_dump() for w in weights_in])
+@app.get("/health", tags=["Health"], summary="Health check")
+def health_check() -> dict[str, str]:
+    """Returns ``{"status": "ok"}`` if the server is running."""
+    return {"status": "ok"}
 
 
-def _build_observations(observations_in) -> pd.DataFrame:
-    return pd.DataFrame([obs.model_dump() for obs in observations_in])
+# ── Versioned API router with auth ────────────────────────────────
+# All /api/v1/ routes require a valid API key.
 
+from fastapi import APIRouter
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "index_engine_version": __version__}
+v1_router = APIRouter(
+    prefix="/api/v1",
+    dependencies=[Depends(verify_api_key)],
+)
 
+v1_router.include_router(index_router)
+v1_router.include_router(routes_router)
+v1_router.include_router(quality_router)
+v1_router.include_router(news_router)
+v1_router.include_router(analytics_router)
+v1_router.include_router(dashboard_router)
+# Forecasting endpoints (national/route forecasts, baseline evaluation,
+# CPI benchmark, booking-horizon analysis) -- see api/forecasting_routes.py.
+v1_router.include_router(forecasting_router)
 
-@app.post("/index/calculate", response_model=IndexResultOut)
-def calculate_index(request: CalculateRequest):
-    """Calculate the airfare index for a single current_period vs. base_period."""
-    config = _build_config(request.base_period, request.config)
-    weights = _build_weights(request.weights)
-    observations = _build_observations(request.observations)
-
-    engine = AirfarePriceIndex(base_period=request.base_period, weights=weights, config=config)
-    try:
-        result = engine.calculate(observations=observations, current_period=request.current_period)
-    except InsufficientDataError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    return result.to_dict()
-
-
-@app.post("/index/timeseries", response_model=list[IndexResultOut])
-def calculate_timeseries(request: TimeseriesRequest):
-    """Calculate the index for a list of periods in one call, e.g. for a
-    dashboard's "index over time" chart — avoids re-uploading observations
-    per period."""
-    config = _build_config(request.base_period, request.config)
-    weights = _build_weights(request.weights)
-    observations = _build_observations(request.observations)
-
-    engine = AirfarePriceIndex(base_period=request.base_period, weights=weights, config=config)
-    results = []
-    for period in request.periods:
-        try:
-            result = engine.calculate(observations=observations, current_period=period)
-        except InsufficientDataError as exc:
-            raise HTTPException(status_code=422, detail=f"Period {period}: {exc}") from exc
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=f"Period {period}: {exc}") from exc
-        results.append(result.to_dict())
-    return results
+app.include_router(v1_router)

@@ -49,6 +49,6 @@ total_fare, currency` (plus optional `fare_class`, `fare_type`, `base_fare`,
 `taxes`, `fees`, `stops`, `duration`, `baggage`, `availability`, `source`,
 `timestamp` — unused by the engine today but safe to pass through).
 
-## Backend integration
+## Backend API module (`api/`)
 
-FastAPI backend integration layer is being added in `feature/backend-api` (PR #4).
+FastAPI backend that exposes the Index Engine and related modules to the frontend dashboard. See [`api/README.md`](api/README.md) for setup, endpoints, and authentication.
