@@ -13,6 +13,7 @@ from api.main import app
 from conftest import make_observation
 
 client = TestClient(app)
+client.headers.update({"X-API-Key": "test-key-12345"})
 
 
 def _monthly_observations(months, per_month=3, origin="BLR", destination="DEL", base_fare=5000.0):
@@ -53,7 +54,7 @@ def _base_request(months=("2026-01", "2026-02", "2026-03", "2026-04"), **extra):
 
 
 def test_national_forecast_success():
-    response = client.post("/forecast/national", json=_base_request())
+    response = client.post("/api/v1/forecast/national", json=_base_request())
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "OK"
@@ -68,7 +69,7 @@ def test_national_forecast_success():
 
 
 def test_route_forecast_success():
-    response = client.post("/forecast/route", json=_base_request(route="BLR-DEL"))
+    response = client.post("/api/v1/forecast/route", json=_base_request(route="BLR-DEL"))
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "OK"
@@ -76,7 +77,7 @@ def test_route_forecast_success():
 
 
 def test_forecast_all_routes_success():
-    response = client.post("/forecast/routes", json=_base_request())
+    response = client.post("/api/v1/forecast/routes", json=_base_request())
     assert response.status_code == 200
     body = response.json()
     assert set(body.keys()) == {"BLR-DEL", "DEL-BOM"}
@@ -94,7 +95,7 @@ def test_national_forecast_insufficient_data_is_reported_not_fabricated():
     # backtest/forecast-from-history path still needs a genuine prior).
     single_period_obs = _monthly_observations(["2026-01"], per_month=3)
     response = client.post(
-        "/forecast/national",
+        "/api/v1/forecast/national",
         json={"base_period": "2026-01", "observations": single_period_obs, "is_synthetic_data": True},
     )
     assert response.status_code == 200
@@ -109,7 +110,7 @@ def test_national_forecast_insufficient_data_is_reported_not_fabricated():
 
 
 def test_cpi_benchmark_insufficient_data_status_not_hidden():
-    response = client.post("/forecast/cpi-benchmark", json=_base_request())
+    response = client.post("/api/v1/forecast/cpi-benchmark", json=_base_request())
     assert response.status_code == 200
     body = response.json()
     # This project's real MoSPI extract has no overlap with a 2026
@@ -125,18 +126,18 @@ def test_cpi_benchmark_insufficient_data_status_not_hidden():
 
 
 def test_route_forecast_unknown_route_is_400():
-    response = client.post("/forecast/route", json=_base_request(route="ZZZ-ZZZ"))
+    response = client.post("/api/v1/forecast/route", json=_base_request(route="ZZZ-ZZZ"))
     assert response.status_code == 400
     assert "ZZZ-ZZZ" in response.json()["detail"]
 
 
 def test_national_forecast_rejects_horizon_other_than_one():
-    response = client.post("/forecast/national", json=_base_request(horizon=2))
+    response = client.post("/api/v1/forecast/national", json=_base_request(horizon=2))
     assert response.status_code == 400
 
 
 def test_national_forecast_rejects_unknown_model():
-    response = client.post("/forecast/national", json=_base_request(model="not_a_real_model"))
+    response = client.post("/api/v1/forecast/national", json=_base_request(model="not_a_real_model"))
     assert response.status_code == 400
 
 
@@ -146,7 +147,7 @@ def test_national_forecast_rejects_malformed_observations():
     # this API layer should paper over.
     bad_obs = [dict(make_observation(total_fare=-1))]
     response = client.post(
-        "/forecast/national",
+        "/api/v1/forecast/national",
         json={"base_period": "2026-01", "observations": bad_obs, "is_synthetic_data": True},
     )
     assert response.status_code in (400, 422)
@@ -158,18 +159,18 @@ def test_national_forecast_rejects_malformed_observations():
 
 
 def test_synthetic_flag_is_surfaced_true_when_requested():
-    response = client.post("/forecast/national", json=_base_request())
+    response = client.post("/api/v1/forecast/national", json=_base_request())
     assert response.json()["is_synthetic_data"] is True
 
 
 def test_synthetic_flag_is_surfaced_false_when_requested():
-    response = client.post("/forecast/national", json=_base_request(**{"is_synthetic_data": False}))
+    response = client.post("/api/v1/forecast/national", json=_base_request(**{"is_synthetic_data": False}))
     assert response.status_code == 200
     assert response.json()["is_synthetic_data"] is False
 
 
 def test_route_evaluate_propagates_synthetic_flag_into_nested_forecasts():
-    response = client.post("/forecast/route/evaluate", json=_base_request(route="BLR-DEL"))
+    response = client.post("/api/v1/forecast/route/evaluate", json=_base_request(route="BLR-DEL"))
     assert response.status_code == 200
     body = response.json()
     for model_result in body.values():
@@ -184,7 +185,7 @@ def test_route_evaluate_propagates_synthetic_flag_into_nested_forecasts():
 
 
 def test_cpi_benchmark_response_shape():
-    response = client.post("/forecast/cpi-benchmark", json=_base_request())
+    response = client.post("/api/v1/forecast/cpi-benchmark", json=_base_request())
     assert response.status_code == 200
     body = response.json()
     for field in (
@@ -205,7 +206,7 @@ def test_cpi_benchmark_response_shape():
 
 
 def test_cpi_benchmark_preserves_distinct_mom_and_yoy_status_fields():
-    response = client.post("/forecast/cpi-benchmark", json=_base_request())
+    response = client.post("/api/v1/forecast/cpi-benchmark", json=_base_request())
     body = response.json()
     # MoM and YoY are reported as genuinely separate fields, never merged
     # into one status -- this is the whole point of Stage 4.
@@ -239,7 +240,7 @@ def test_booking_horizon_response():
                     "is_mock": True,
                 }
             )
-    response = client.post("/forecast/booking-horizon", json={"base_period": "2026-01", "observations": obs})
+    response = client.post("/api/v1/forecast/booking-horizon", json={"base_period": "2026-01", "observations": obs})
     assert response.status_code == 200
     body = response.json()
     assert "T1_7" in body["windows"]
@@ -262,7 +263,7 @@ def test_booking_horizon_out_of_range_window_reports_no_data():
             "is_mock": True,
         }
     ]
-    response = client.post("/forecast/booking-horizon", json={"base_period": "2026-01", "observations": obs})
+    response = client.post("/api/v1/forecast/booking-horizon", json={"base_period": "2026-01", "observations": obs})
     body = response.json()
     assert body["windows"]["T31_45"]["status"] == "NO_DATA"
     assert body["windows"]["T31_45"]["record_count"] == 0
@@ -294,7 +295,7 @@ def test_national_route_calls_forecasting_module_not_a_duplicate_implementation(
         notes="sentinel",
     )
     with patch("api.forecasting_routes.forecast_national_index", return_value=sentinel) as mocked:
-        response = client.post("/forecast/national", json=_base_request())
+        response = client.post("/api/v1/forecast/national", json=_base_request())
     assert response.status_code == 200
     assert mocked.called
     assert response.json()["forecast_value"] == 123456.0
@@ -318,7 +319,7 @@ def test_route_forecast_calls_forecasting_module_not_a_duplicate_implementation(
         notes="sentinel",
     )
     with patch("api.forecasting_routes.forecast_route_index", return_value=sentinel) as mocked:
-        response = client.post("/forecast/route", json=_base_request(route="BLR-DEL"))
+        response = client.post("/api/v1/forecast/route", json=_base_request(route="BLR-DEL"))
     assert response.status_code == 200
     assert mocked.called
     assert response.json()["forecast_value"] == 654321.0
