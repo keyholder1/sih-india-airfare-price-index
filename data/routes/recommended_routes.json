@@ -1,0 +1,1011 @@
+{
+  "source": "DGCA-derived passenger traffic (route-importance weights, NOT official CPI weights)",
+  "weight_period": "2025-06 to 2026-05",
+  "tier_cutoffs": {
+    "tier_1_end_rank": 20,
+    "tier_2_end_rank": 50,
+    "tier_3_end_rank": 100
+  },
+  "routes": [
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "DELHI",
+      "origin_iata": "BLR",
+      "destination_iata": "DEL",
+      "priority": 1,
+      "tier": 1,
+      "national_weight": 0.01455557712774697,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "BENGALURU",
+      "origin_iata": "DEL",
+      "destination_iata": "BLR",
+      "priority": 2,
+      "tier": 1,
+      "national_weight": 0.014442208714333665,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "MUMBAI",
+      "origin_iata": "DEL",
+      "destination_iata": "BOM",
+      "priority": 3,
+      "tier": 1,
+      "national_weight": 0.011241231502977565,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "MUMBAI",
+      "destination_city": "DELHI",
+      "origin_iata": "BOM",
+      "destination_iata": "DEL",
+      "priority": 4,
+      "tier": 1,
+      "national_weight": 0.011054564392703121,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "HYDERABAD",
+      "destination_city": "DELHI",
+      "origin_iata": "HYD",
+      "destination_iata": "DEL",
+      "priority": 5,
+      "tier": 1,
+      "national_weight": 0.009215024446301092,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "HYDERABAD",
+      "origin_iata": "DEL",
+      "destination_iata": "HYD",
+      "priority": 6,
+      "tier": 1,
+      "national_weight": 0.009184119295593401,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "KOLKATA",
+      "origin_iata": "DEL",
+      "destination_iata": "CCU",
+      "priority": 7,
+      "tier": 1,
+      "national_weight": 0.008642964163403544,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "PUNE",
+      "origin_iata": "DEL",
+      "destination_iata": "PNQ",
+      "priority": 8,
+      "tier": 1,
+      "national_weight": 0.00852652306481411,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "PUNE",
+      "destination_city": "DELHI",
+      "origin_iata": "PNQ",
+      "destination_iata": "DEL",
+      "priority": 9,
+      "tier": 1,
+      "national_weight": 0.008497062135572183,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOLKATA",
+      "destination_city": "DELHI",
+      "origin_iata": "CCU",
+      "destination_iata": "DEL",
+      "priority": 10,
+      "tier": 1,
+      "national_weight": 0.008392674045758748,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "MUMBAI (MUMBAI)",
+      "destination_city": "DELHI",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 11,
+      "tier": 1,
+      "national_weight": 0.008212033439872302,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "MUMBAI (MUMBAI)",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 12,
+      "tier": 1,
+      "national_weight": 0.007965493543399921,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "AHMEDABAD",
+      "origin_iata": "DEL",
+      "destination_iata": "AMD",
+      "priority": 13,
+      "tier": 1,
+      "national_weight": 0.007134870071745059,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "AHMEDABAD",
+      "destination_city": "DELHI",
+      "origin_iata": "AMD",
+      "destination_iata": "DEL",
+      "priority": 14,
+      "tier": 1,
+      "national_weight": 0.006958764202395146,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI",
+      "destination_city": "BENGALURU",
+      "origin_iata": "BOM",
+      "destination_iata": "BLR",
+      "priority": 15,
+      "tier": 1,
+      "national_weight": 0.0069193660785410544,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "MUMBAI",
+      "origin_iata": "BLR",
+      "destination_iata": "BOM",
+      "priority": 16,
+      "tier": 1,
+      "national_weight": 0.006811946906638981,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "HYDERABAD",
+      "origin_iata": "BLR",
+      "destination_iata": "HYD",
+      "priority": 17,
+      "tier": 1,
+      "national_weight": 0.006717668367085888,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "HYDERABAD",
+      "destination_city": "BENGALURU",
+      "origin_iata": "HYD",
+      "destination_iata": "BLR",
+      "priority": 18,
+      "tier": 1,
+      "national_weight": 0.006663507090470662,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHENNAI",
+      "destination_city": "DELHI",
+      "origin_iata": "MAA",
+      "destination_iata": "DEL",
+      "priority": 19,
+      "tier": 1,
+      "national_weight": 0.006603218273397816,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "CHENNAI",
+      "origin_iata": "DEL",
+      "destination_iata": "MAA",
+      "priority": 20,
+      "tier": 1,
+      "national_weight": 0.006600086155239555,
+      "currently_covered": true
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "KOLKATA",
+      "origin_iata": "BLR",
+      "destination_iata": "CCU",
+      "priority": 21,
+      "tier": 2,
+      "national_weight": 0.006504511976676026,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOLKATA",
+      "destination_city": "BENGALURU",
+      "origin_iata": "CCU",
+      "destination_iata": "BLR",
+      "priority": 22,
+      "tier": 2,
+      "national_weight": 0.006402043572185395,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "SRINAGAR",
+      "origin_iata": "DEL",
+      "destination_iata": "SXR",
+      "priority": 23,
+      "tier": 2,
+      "national_weight": 0.00538464006759004,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "PUNE",
+      "origin_iata": "BLR",
+      "destination_iata": "PNQ",
+      "priority": 24,
+      "tier": 2,
+      "national_weight": 0.005331025574410411,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "PUNE",
+      "destination_city": "BENGALURU",
+      "origin_iata": "PNQ",
+      "destination_iata": "BLR",
+      "priority": 25,
+      "tier": 2,
+      "national_weight": 0.0053139623652408395,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "SRINAGAR",
+      "destination_city": "DELHI",
+      "origin_iata": "SXR",
+      "destination_iata": "DEL",
+      "priority": 26,
+      "tier": 2,
+      "national_weight": 0.0053005007947883554,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI (MUMBAI)",
+      "destination_city": "BENGALURU",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 27,
+      "tier": 2,
+      "national_weight": 0.004847413455518986,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "GUWAHATI",
+      "origin_iata": "DEL",
+      "destination_iata": "GAU",
+      "priority": 28,
+      "tier": 2,
+      "national_weight": 0.004708369993825448,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "PATNA",
+      "origin_iata": "DEL",
+      "destination_iata": "PAT",
+      "priority": 29,
+      "tier": 2,
+      "national_weight": 0.004675343085655711,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "MUMBAI (MUMBAI)",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 30,
+      "tier": 2,
+      "national_weight": 0.004635897415415916,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "GUWAHATI",
+      "destination_city": "DELHI",
+      "origin_iata": "GAU",
+      "destination_iata": "DEL",
+      "priority": 31,
+      "tier": 2,
+      "national_weight": 0.0046145015418490535,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHENNAI",
+      "destination_city": "BENGALURU",
+      "origin_iata": "MAA",
+      "destination_iata": "BLR",
+      "priority": 32,
+      "tier": 2,
+      "national_weight": 0.004538064783531439,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "CHENNAI",
+      "origin_iata": "BLR",
+      "destination_iata": "MAA",
+      "priority": 33,
+      "tier": 2,
+      "national_weight": 0.004426639828633792,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "HYDERABAD",
+      "destination_city": "CHENNAI",
+      "origin_iata": "HYD",
+      "destination_iata": "MAA",
+      "priority": 34,
+      "tier": 2,
+      "national_weight": 0.00436287418210633,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHENNAI",
+      "destination_city": "HYDERABAD",
+      "origin_iata": "MAA",
+      "destination_iata": "HYD",
+      "priority": 35,
+      "tier": 2,
+      "national_weight": 0.004308647529210761,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "PATNA",
+      "destination_city": "DELHI",
+      "origin_iata": "PAT",
+      "destination_iata": "DEL",
+      "priority": 36,
+      "tier": 2,
+      "national_weight": 0.004278158409377983,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "KOCHI",
+      "origin_iata": "BLR",
+      "destination_iata": "COK",
+      "priority": 37,
+      "tier": 2,
+      "national_weight": 0.004089571613780733,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "LUCKNOW",
+      "origin_iata": "DEL",
+      "destination_iata": "LKO",
+      "priority": 38,
+      "tier": 2,
+      "national_weight": 0.004087194294495526,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOCHI",
+      "destination_city": "BENGALURU",
+      "origin_iata": "COK",
+      "destination_iata": "BLR",
+      "priority": 39,
+      "tier": 2,
+      "national_weight": 0.00408373529493555,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "LUCKNOW",
+      "destination_city": "DELHI",
+      "origin_iata": "LKO",
+      "destination_iata": "DEL",
+      "priority": 40,
+      "tier": 2,
+      "national_weight": 0.00393720327749361,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI",
+      "destination_city": "KOLKATA",
+      "origin_iata": "BOM",
+      "destination_iata": "CCU",
+      "priority": 41,
+      "tier": 2,
+      "national_weight": 0.003913560837202228,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI",
+      "destination_city": "HYDERABAD",
+      "origin_iata": "BOM",
+      "destination_iata": "HYD",
+      "priority": 42,
+      "tier": 2,
+      "national_weight": 0.003904164482727447,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOLKATA",
+      "destination_city": "MUMBAI",
+      "origin_iata": "CCU",
+      "destination_iata": "BOM",
+      "priority": 43,
+      "tier": 2,
+      "national_weight": 0.0038664661421622787,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI",
+      "destination_city": "CHENNAI",
+      "origin_iata": "BOM",
+      "destination_iata": "MAA",
+      "priority": 44,
+      "tier": 2,
+      "national_weight": 0.0037619056967006666,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "HYDERABAD",
+      "destination_city": "MUMBAI",
+      "origin_iata": "HYD",
+      "destination_iata": "BOM",
+      "priority": 45,
+      "tier": 2,
+      "national_weight": 0.003692452313783347,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "BAGDOGRA",
+      "origin_iata": "DEL",
+      "destination_iata": "IXB",
+      "priority": 46,
+      "tier": 2,
+      "national_weight": 0.0036782953774399402,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHENNAI",
+      "destination_city": "MUMBAI",
+      "origin_iata": "MAA",
+      "destination_iata": "BOM",
+      "priority": 47,
+      "tier": 2,
+      "national_weight": 0.0036592173901761546,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "BHUBANESWAR",
+      "origin_iata": "DEL",
+      "destination_iata": "BBI",
+      "priority": 48,
+      "tier": 2,
+      "national_weight": 0.0036190644674490105,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "AHMEDABAD",
+      "origin_iata": "BLR",
+      "destination_iata": "AMD",
+      "priority": 49,
+      "tier": 2,
+      "national_weight": 0.0035081446928994695,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BHUBANESWAR",
+      "destination_city": "DELHI",
+      "origin_iata": "BBI",
+      "destination_iata": "DEL",
+      "priority": 50,
+      "tier": 2,
+      "national_weight": 0.0035011613174991746,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "AHMEDABAD",
+      "destination_city": "BENGALURU",
+      "origin_iata": "AMD",
+      "destination_iata": "BLR",
+      "priority": 51,
+      "tier": 3,
+      "national_weight": 0.0034973813798356954,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BAGDOGRA",
+      "destination_city": "DELHI",
+      "origin_iata": "IXB",
+      "destination_iata": "DEL",
+      "priority": 52,
+      "tier": 3,
+      "national_weight": 0.003491277612570927,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHENNAI",
+      "destination_city": "KOLKATA",
+      "origin_iata": "MAA",
+      "destination_iata": "CCU",
+      "priority": 53,
+      "tier": 3,
+      "national_weight": 0.0034552849985928944,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "INDORE",
+      "destination_city": "DELHI",
+      "origin_iata": "IDR",
+      "destination_iata": "DEL",
+      "priority": 54,
+      "tier": 3,
+      "national_weight": 0.0033738736996709842,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "INDORE",
+      "origin_iata": "DEL",
+      "destination_iata": "IDR",
+      "priority": 55,
+      "tier": 3,
+      "national_weight": 0.003360661747743447,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI",
+      "destination_city": "AHMEDABAD",
+      "origin_iata": "BOM",
+      "destination_iata": "AMD",
+      "priority": 56,
+      "tier": 3,
+      "national_weight": 0.0033284312415342546,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "AHMEDABAD",
+      "destination_city": "MUMBAI",
+      "origin_iata": "AMD",
+      "destination_iata": "BOM",
+      "priority": 57,
+      "tier": 3,
+      "national_weight": 0.0033142921350854866,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOLKATA",
+      "destination_city": "CHENNAI",
+      "origin_iata": "CCU",
+      "destination_iata": "MAA",
+      "priority": 58,
+      "tier": 3,
+      "national_weight": 0.003252701735703989,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "AMRITSAR",
+      "origin_iata": "DEL",
+      "destination_iata": "ATQ",
+      "priority": 59,
+      "tier": 3,
+      "national_weight": 0.0031963949284338636,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "AMRITSAR",
+      "destination_city": "DELHI",
+      "origin_iata": "ATQ",
+      "destination_iata": "DEL",
+      "priority": 60,
+      "tier": 3,
+      "national_weight": 0.003183046280647427,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "HYDERABAD",
+      "destination_city": "KOLKATA",
+      "origin_iata": "HYD",
+      "destination_iata": "CCU",
+      "priority": 61,
+      "tier": 3,
+      "national_weight": 0.003075145701590099,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "GUWAHATI",
+      "destination_city": "KOLKATA",
+      "origin_iata": "GAU",
+      "destination_iata": "CCU",
+      "priority": 62,
+      "tier": 3,
+      "national_weight": 0.0030118376890250396,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOLKATA",
+      "destination_city": "GUWAHATI",
+      "origin_iata": "CCU",
+      "destination_iata": "GAU",
+      "priority": 63,
+      "tier": 3,
+      "national_weight": 0.003011742596253631,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOLKATA",
+      "destination_city": "HYDERABAD",
+      "origin_iata": "CCU",
+      "destination_iata": "HYD",
+      "priority": 64,
+      "tier": 3,
+      "national_weight": 0.0029629600045211857,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "VARANASI",
+      "origin_iata": "DEL",
+      "destination_iata": "VNS",
+      "priority": 65,
+      "tier": 3,
+      "national_weight": 0.0029280371842214967,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "VARANASI",
+      "destination_city": "DELHI",
+      "origin_iata": "VNS",
+      "destination_iata": "DEL",
+      "priority": 66,
+      "tier": 3,
+      "national_weight": 0.0028833911280453112,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI (MUMBAI)",
+      "destination_city": "KOLKATA",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 67,
+      "tier": 3,
+      "national_weight": 0.002877073402044874,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "KOCHI",
+      "origin_iata": "DEL",
+      "destination_iata": "COK",
+      "priority": 68,
+      "tier": 3,
+      "national_weight": 0.002837193871035528,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOCHI",
+      "destination_city": "DELHI",
+      "origin_iata": "COK",
+      "destination_iata": "DEL",
+      "priority": 69,
+      "tier": 3,
+      "national_weight": 0.0028145855646332105,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI (MUMBAI)",
+      "destination_city": "CHENNAI",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 70,
+      "tier": 3,
+      "national_weight": 0.0028121844721551515,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "RANCHI",
+      "origin_iata": "DEL",
+      "destination_iata": "IXR",
+      "priority": 71,
+      "tier": 3,
+      "national_weight": 0.0026879101065209613,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHENNAI",
+      "destination_city": "MUMBAI (MUMBAI)",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 72,
+      "tier": 3,
+      "national_weight": 0.0026515252348608695,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOLKATA",
+      "destination_city": "MUMBAI (MUMBAI)",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 73,
+      "tier": 3,
+      "national_weight": 0.002648506039368657,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "RANCHI",
+      "destination_city": "DELHI",
+      "origin_iata": "IXR",
+      "destination_iata": "DEL",
+      "priority": 74,
+      "tier": 3,
+      "national_weight": 0.002608846410393193,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI (MUMBAI)",
+      "destination_city": "HYDERABAD",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 75,
+      "tier": 3,
+      "national_weight": 0.0026059401375670274,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "CHANDIGARH",
+      "origin_iata": "DEL",
+      "destination_iata": "IXC",
+      "priority": 76,
+      "tier": 3,
+      "national_weight": 0.002602397931832069,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHANDIGARH",
+      "destination_city": "DELHI",
+      "origin_iata": "IXC",
+      "destination_iata": "DEL",
+      "priority": 77,
+      "tier": 3,
+      "national_weight": 0.0026000622156343535,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "VARANASI",
+      "origin_iata": "BLR",
+      "destination_iata": "VNS",
+      "priority": 78,
+      "tier": 3,
+      "national_weight": 0.002584746336139408,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "COIMBATORE",
+      "destination_city": "CHENNAI",
+      "origin_iata": "CJB",
+      "destination_iata": "MAA",
+      "priority": 79,
+      "tier": 3,
+      "national_weight": 0.0025838013517235385,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI",
+      "destination_city": "DABOLIM",
+      "origin_iata": "BOM",
+      "destination_iata": "GOI",
+      "priority": 80,
+      "tier": 3,
+      "national_weight": 0.002557526030323789,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHENNAI",
+      "destination_city": "COIMBATORE",
+      "origin_iata": "MAA",
+      "destination_iata": "CJB",
+      "priority": 81,
+      "tier": 3,
+      "national_weight": 0.0025573417880791855,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "AHMEDABAD",
+      "destination_city": "MUMBAI (MUMBAI)",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 82,
+      "tier": 3,
+      "national_weight": 0.0025527297886658844,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "VARANASI",
+      "destination_city": "BENGALURU",
+      "origin_iata": "VNS",
+      "destination_iata": "BLR",
+      "priority": 83,
+      "tier": 3,
+      "national_weight": 0.0025213372875047273,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOLKATA",
+      "destination_city": "AGARTALA",
+      "origin_iata": "CCU",
+      "destination_iata": "IXA",
+      "priority": 84,
+      "tier": 3,
+      "national_weight": 0.0025082025984539593,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "BHUBANESWAR",
+      "origin_iata": "BLR",
+      "destination_iata": "BBI",
+      "priority": 85,
+      "tier": 3,
+      "national_weight": 0.00250505265040106,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DABOLIM",
+      "destination_city": "MUMBAI",
+      "origin_iata": "GOI",
+      "destination_iata": "BOM",
+      "priority": 86,
+      "tier": 3,
+      "national_weight": 0.0024877338794083276,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "HYDERABAD",
+      "destination_city": "MUMBAI (MUMBAI)",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 87,
+      "tier": 3,
+      "national_weight": 0.0024763405767339736,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BHUBANESWAR",
+      "destination_city": "BENGALURU",
+      "origin_iata": "BBI",
+      "destination_iata": "BLR",
+      "priority": 88,
+      "tier": 3,
+      "national_weight": 0.00247058152076556,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "MUMBAI (MUMBAI)",
+      "destination_city": "AHMEDABAD",
+      "origin_iata": null,
+      "destination_iata": null,
+      "priority": 89,
+      "tier": 3,
+      "national_weight": 0.0024511409923107805,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "RAIPUR",
+      "destination_city": "DELHI",
+      "origin_iata": "RPR",
+      "destination_iata": "DEL",
+      "priority": 90,
+      "tier": 3,
+      "national_weight": 0.0024473194515598107,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "LEH",
+      "destination_city": "DELHI",
+      "origin_iata": "IXL",
+      "destination_iata": "DEL",
+      "priority": 91,
+      "tier": 3,
+      "national_weight": 0.0024356468138694446,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "AGARTALA",
+      "destination_city": "KOLKATA",
+      "origin_iata": "IXA",
+      "destination_iata": "CCU",
+      "priority": 92,
+      "tier": 3,
+      "national_weight": 0.002432639504973658,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "RAIPUR",
+      "origin_iata": "DEL",
+      "destination_iata": "RPR",
+      "priority": 93,
+      "tier": 3,
+      "national_weight": 0.0024232372072006646,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "LUCKNOW",
+      "origin_iata": "BLR",
+      "destination_iata": "LKO",
+      "priority": 94,
+      "tier": 3,
+      "national_weight": 0.00241493441959708,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "PUNE",
+      "destination_city": "CHENNAI",
+      "origin_iata": "PNQ",
+      "destination_iata": "MAA",
+      "priority": 95,
+      "tier": 3,
+      "national_weight": 0.0024101500645356006,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "LUCKNOW",
+      "destination_city": "BENGALURU",
+      "origin_iata": "LKO",
+      "destination_iata": "BLR",
+      "priority": 96,
+      "tier": 3,
+      "national_weight": 0.00240853348742166,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "BENGALURU",
+      "destination_city": "GUWAHATI",
+      "origin_iata": "BLR",
+      "destination_iata": "GAU",
+      "priority": 97,
+      "tier": 3,
+      "national_weight": 0.002403969034394063,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "CHENNAI",
+      "destination_city": "PUNE",
+      "origin_iata": "MAA",
+      "destination_iata": "PNQ",
+      "priority": 98,
+      "tier": 3,
+      "national_weight": 0.0023781038005710117,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "DELHI",
+      "destination_city": "LEH",
+      "origin_iata": "DEL",
+      "destination_iata": "IXL",
+      "priority": 99,
+      "tier": 3,
+      "national_weight": 0.0023754946926554973,
+      "currently_covered": false
+    },
+    {
+      "origin_city": "KOCHI",
+      "destination_city": "HYDERABAD",
+      "origin_iata": "COK",
+      "destination_iata": "HYD",
+      "priority": 100,
+      "tier": 3,
+      "national_weight": 0.002330973445741785,
+      "currently_covered": false
+    }
+  ]
+}

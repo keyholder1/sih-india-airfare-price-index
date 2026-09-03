@@ -43,3 +43,14 @@ htmlcov/
 
 # Local environment secrets
 .env
+.env.*
+!.env.example
+
+# Generated example outputs
+examples/charts.png
+examples/analytics_charts.png
+examples/route_coverage_curve.png
+examples/last_result.json
+
+# Scraper-collected data (see docs/scraper.md)
+data/collections/
