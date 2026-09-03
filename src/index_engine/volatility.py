@@ -19,8 +19,17 @@ why rather than returning both as unexplained numbers:
   month-over-month log changes in a route's representative fare, the
   standard definition of volatility in financial time series. Needs
   several months of history to mean anything, which is why it isn't the
-  default yet — enable it via ``VolatilityConfig(method="log_return_stddev")``
-  once enough monthly history exists.
+  default yet. **It is not wired into ``calculate_volatility``/
+  ``compute_route_volatility``** — those two only ever see one period's
+  cross-sectional fares (by design, so the coefficient-of-variation path
+  needs no history), which is not what this method needs. Setting
+  ``VolatilityConfig(method="log_return_stddev")`` and calling
+  ``calculate_volatility`` raises ``NotImplementedError`` rather than
+  silently returning ``None`` everywhere. To actually use this method once
+  enough monthly history exists, call :func:`log_return_stddev` directly
+  with your own chronologically-sorted, one-representative-fare-per-period
+  ``pandas.Series`` for the route you care about (e.g. built from
+  ``aggregation.compute_route_period_fares`` across several periods).
 
 Kept independent of index_engine.index: this module only reads the same
 cleaned observations index.py already produces, it does not change or
@@ -142,7 +151,23 @@ class VolatilityResult:
 
 def compute_route_volatility(clean_df: pd.DataFrame, period: str, config: VolatilityConfig) -> List[RouteVolatilityResult]:
     """``clean_df`` must have route/period/standardized_fare columns, i.e.
-    the same post-cleaning observations index_engine.index works from."""
+    the same post-cleaning observations index_engine.index works from.
+
+    Raises
+    ------
+    NotImplementedError
+        If ``config.method == "log_return_stddev"``. This function only
+        ever has one period's cross-sectional fares (``period_df`` below),
+        never the multi-period representative-fare series that method
+        needs — see the module docstring and :func:`log_return_stddev`.
+    """
+    if config.method == "log_return_stddev":
+        raise NotImplementedError(
+            "VolatilityConfig(method='log_return_stddev') is not usable through "
+            "compute_route_volatility()/calculate_volatility() -- they only ever see one period's "
+            "cross-sectional fares. Call index_engine.volatility.log_return_stddev(series) directly "
+            "with your own multi-period representative-fare series instead. See the module docstring."
+        )
     period_df = clean_df[clean_df["period"] == period]
     results = []
     for route, group in period_df.groupby("route"):
@@ -151,7 +176,7 @@ def compute_route_volatility(clean_df: pd.DataFrame, period: str, config: Volati
         if n < config.min_observations:
             results.append(RouteVolatilityResult(route, period, None, INSUFFICIENT_DATA, n, config.method))
             continue
-        vol = coefficient_of_variation(fares) if config.method == "coefficient_of_variation" else None
+        vol = coefficient_of_variation(fares)
         results.append(RouteVolatilityResult(route, period, vol, classify(vol, config), n, config.method))
     return results
 

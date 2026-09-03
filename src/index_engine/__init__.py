@@ -35,6 +35,26 @@ from .traffic import build_dgca_weights
 from .volatility import VolatilityConfig, VolatilityResult, calculate_volatility
 from .weighting import generate_synthetic_weights
 
+# News & Event Context layer (optional, additive — see docs/news_context.md).
+# Purely a consumer of the outputs above; nothing in this package imports
+# from these modules, so the index/analytics engine works identically
+# whether or not this layer is ever used.
+from .context_signals import ContextSignalProvider, ContextSignalResult, combine_context_signals
+from .mock_news_provider import MockNewsProvider
+from .news_context import (
+    NewsContextConfig,
+    NewsContextService,
+    NewsContextSignalAdapter,
+    attach_news_context,
+    is_significant_movement,
+    route_movement_from_row,
+    to_dashboard_dict,
+    to_dashboard_text,
+)
+from .news_matching import MatchingConfig, rank_articles, score_article
+from .news_models import NewsArticle, NewsContextResult, NewsMatch, RouteMovement
+from .news_provider import NewsProvider, NewsSearchQuery
+
 __all__ = [
     "AirfarePriceIndex",
     "IndexConfig",
@@ -67,6 +87,28 @@ __all__ = [
     "mark_currently_covered",
     "city_level_traffic",
     "underrepresented_cities",
+    # News & Event Context layer
+    "NewsArticle",
+    "NewsContextResult",
+    "NewsMatch",
+    "RouteMovement",
+    "NewsProvider",
+    "NewsSearchQuery",
+    "MockNewsProvider",
+    "MatchingConfig",
+    "rank_articles",
+    "score_article",
+    "NewsContextConfig",
+    "NewsContextService",
+    "NewsContextSignalAdapter",
+    "attach_news_context",
+    "is_significant_movement",
+    "route_movement_from_row",
+    "to_dashboard_dict",
+    "to_dashboard_text",
+    "ContextSignalProvider",
+    "ContextSignalResult",
+    "combine_context_signals",
 ]
 
 __version__ = "0.1.0"

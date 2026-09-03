@@ -13,9 +13,12 @@ from .models import RouteIndexResult
 
 STATUS_OK = "OK"
 STATUS_NO_BASE_DATA = "NO_BASE_DATA"
-STATUS_NO_CURRENT_DATA = "NO_CURRENT_DATA"
 STATUS_INSUFFICIENT_DATA = "INSUFFICIENT_DATA"
 STATUS_NEW_ROUTE = "NEW_ROUTE"
+#: Had base-period data, but none for the period being classified (whether
+#: that's the queried "current" period, or a prev-month/prev-year
+#: comparison period — index.py._classify uses this same status for all
+#: three, there is no separate "no current data" status).
 STATUS_DISCONTINUED = "DISCONTINUED"
 
 
@@ -25,10 +28,6 @@ def compute_quality_flags(route_results: List[RouteIndexResult], cleaning_remove
     no_base = [r.route for r in route_results if r.status == STATUS_NO_BASE_DATA]
     if no_base:
         flags.append(f"{len(no_base)} route(s) have no base-period data: {sorted(no_base)}")
-
-    no_current = [r.route for r in route_results if r.status == STATUS_NO_CURRENT_DATA]
-    if no_current:
-        flags.append(f"{len(no_current)} route(s) have no current-period data: {sorted(no_current)}")
 
     insufficient = [r.route for r in route_results if r.status == STATUS_INSUFFICIENT_DATA]
     if insufficient:

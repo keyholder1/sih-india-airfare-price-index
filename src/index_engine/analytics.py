@@ -29,7 +29,7 @@ def _clean_for_volatility(observations: Union[pd.DataFrame, list], config: Index
     DataFrame — volatility needs the individual observations, not just the
     collapsed representative fares the price index returns."""
     df = observations.copy() if isinstance(observations, pd.DataFrame) else pd.DataFrame(list(observations))
-    valid, _ = validation.validate_observations(df)
+    valid, _ = validation.validate_observations(df, fare_field=config.fare_field)
     if len(valid) == 0:
         return valid
     enriched = normalization.enrich(valid, config)
