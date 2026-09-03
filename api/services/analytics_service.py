@@ -16,7 +16,9 @@ native contract.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+import math
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -27,6 +29,22 @@ from index_engine.utils import shift_period
 from src.engine import data_access
 
 _RECOMMENDED_ROUTES_PATH = data_access.REPO_ROOT / "data" / "routes" / "recommended_routes.json"
+_MOSPI_CPI_PATH = data_access.REPO_ROOT / "data" / "benchmarks" / "cpi_1337.xlsx"
+
+
+def _matrix_to_json(matrix: pd.DataFrame) -> Dict[str, Any]:
+    """pandas DataFrame (NaN for "no data") -> JSON-safe nested lists
+    (null for "no data", never 0 -- see route_analysis.inflation_matrix's
+    own docstring: a route with no data is not a route with zero
+    inflation)."""
+    return {
+        "origins": list(matrix.index),
+        "destinations": list(matrix.columns),
+        "values": [
+            [None if (v is None or (isinstance(v, float) and math.isnan(v))) else round(float(v), 2) for v in row]
+            for row in matrix.values
+        ],
+    }
 
 
 def _period_bounds(observations: List[Dict[str, Any]]) -> tuple[str, str]:
@@ -54,7 +72,15 @@ def get_analytics() -> Dict[str, Any]:
     engine = AirfareAnalytics(base_period=base_period, weights=weights if len(weights) else None)
     result = engine.calculate(observations=df, current_period=current_period)
     result.traffic_weight_coverage = traffic_coverage
-    return result.to_dict()
+
+    payload = result.to_dict()
+    # Not part of AnalyticsResult.to_dict() upstream -- inflation_matrix()
+    # is a separate method on the result object (see index_engine.analytics
+    # .AnalyticsResult / route_analysis.inflation_matrix). Attached here so
+    # the one frontend that wants a heatmap doesn't need a second request.
+    payload["inflation_matrix_mom"] = _matrix_to_json(result.inflation_matrix(metric="mom"))
+    payload["inflation_matrix_yoy"] = _matrix_to_json(result.inflation_matrix(metric="yoy"))
+    return payload
 
 
 def get_timeseries(start_date: str, end_date: str) -> List[Dict[str, Any]]:
@@ -109,3 +135,34 @@ def get_data_quality() -> Dict[str, Any]:
     raw, _is_real = data_access.load_raw_observations()
     result = data_quality_mod.validate_fare_batch(raw)
     return result.to_dict()
+
+
+def get_forecast() -> Dict[str, Any]:
+    """National baseline forecast (one period past the last real period)
+    plus a MoSPI CPI benchmark comparison, if the reference file is
+    present. Builds the forecasting dataset from the same on-disk
+    observations get_analytics() uses -- see forecasting_routes.py for
+    the same pattern against caller-supplied observations."""
+    from forecasting import build_forecasting_dataset, compare_to_mospi_cpi, forecast_national_index, load_mospi_cpi_series
+
+    observations, is_real = data_access.load_validated_observations()
+    base_period, _current_period = _period_bounds(observations)
+    df = pd.DataFrame(observations)
+    weights, _weights_real = data_access.build_weights(observations)
+
+    dataset = build_forecasting_dataset(
+        observations=df, base_period=base_period, weights=weights if len(weights) else None
+    )
+    forecast = forecast_national_index(dataset, is_synthetic_data=not is_real)
+
+    cpi_benchmark: Optional[Dict[str, Any]] = None
+    if _MOSPI_CPI_PATH.exists():
+        mospi = load_mospi_cpi_series(_MOSPI_CPI_PATH)
+        cpi_benchmark = compare_to_mospi_cpi(dataset, mospi, is_synthetic_airfare_data=not is_real).to_dict()
+        # Never leak the local absolute filesystem path to a client.
+        cpi_benchmark["mospi_source_file"] = str(_MOSPI_CPI_PATH.relative_to(data_access.REPO_ROOT))
+
+    return {
+        "national_forecast": forecast.to_dict(),
+        "cpi_benchmark": cpi_benchmark,
+    }
