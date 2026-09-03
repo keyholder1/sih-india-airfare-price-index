@@ -15,7 +15,7 @@ scraped (not scraper mock output, not this file's own demo fallback),
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
@@ -51,8 +51,27 @@ DGCA_TRAFFIC_CSV = str(REPO_ROOT / "data" / "traffic" / "dgca_domestic_city_pair
 #: provider is wired in anywhere in this project yet, so every response
 #: from this adapter is "synthetic" regardless of whether the underlying
 #: fare data is real -- news context is a separate, still-mock layer.
-_NEWS_DEMO_ANCHOR = datetime(2026, 8, 14, 9, 0, 0, tzinfo=timezone.utc)
+#: Naive, matching mock_news_provider.DEMO_ARTICLES's own naive
+#: published_at timestamps (mixing naive/aware datetimes raises there).
+_NEWS_DEMO_ANCHOR = datetime(2026, 8, 14, 9, 0, 0)
 _NEWS_DATA_SOURCE = "synthetic"
+
+
+def _letter_grade(score_0_100: float) -> str:
+    """data_quality.compute_quality_score returns a 0-100 score with its
+    own PROTOTYPE grade words (see scoring.py); the API contract wants a
+    0-1 score and an A-F letter, so both are re-derived from the numeric
+    score here using standard bands rather than trying to keep two grade
+    vocabularies in sync."""
+    if score_0_100 >= 90:
+        return "A"
+    if score_0_100 >= 80:
+        return "B"
+    if score_0_100 >= 70:
+        return "C"
+    if score_0_100 >= 60:
+        return "D"
+    return "F"
 
 
 def _safe_pct_change(current: Optional[float], previous: Optional[float]) -> Optional[float]:
@@ -274,8 +293,8 @@ class RealDataQualityEngine:
             rejected=result.records_rejected,
             flagged=result.records_flagged,
             rejection_reasons=dict(result.rejection_reasons),
-            quality_score=result.quality_score,
-            quality_grade=result.quality_grade,
+            quality_score=round(result.quality_score / 100.0, 4),
+            quality_grade=_letter_grade(result.quality_score),
             route_health=route_health,
             source_health=source_health,
             data_source=data_source,

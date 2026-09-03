@@ -21,6 +21,7 @@ from api.routes import (
     analytics_router,
     dashboard_router,
 )
+from api.forecasting_routes import router as forecasting_router
 
 # Load .env file if present
 load_dotenv()
@@ -29,9 +30,7 @@ app = FastAPI(
     title="India Airfare Price Index API",
     description=(
         "Backend API for the India Airfare Price Index (SIH) project. "
-        "Exposes the Index Engine and related modules to a frontend dashboard.\n\n"
-        "**Note:** Until the real engine modules are integrated, all endpoints "
-        "return synthetic stub data clearly labeled with `data_source: \"synthetic\"`."
+        "Exposes the Index Engine and related modules to a frontend dashboard."
     ),
     version="0.1.0",
     docs_url="/docs",
@@ -75,5 +74,8 @@ v1_router.include_router(quality_router)
 v1_router.include_router(news_router)
 v1_router.include_router(analytics_router)
 v1_router.include_router(dashboard_router)
+# Forecasting endpoints (national/route forecasts, baseline evaluation,
+# CPI benchmark, booking-horizon analysis) -- see api/forecasting_routes.py.
+v1_router.include_router(forecasting_router)
 
 app.include_router(v1_router)

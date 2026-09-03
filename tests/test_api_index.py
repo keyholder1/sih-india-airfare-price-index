@@ -26,13 +26,26 @@ class TestIndexCalculate:
         assert "flags" in data
         assert "metadata" in data
 
-    def test_synthetic_label(self, client):
-        """Response is labeled as synthetic data."""
+    def test_real_label_when_observations_marked_real(self, client):
+        """The engine trusts the caller's own source label (see
+        ObservationInput.source's description) since it always computes
+        from exactly the data it's given -- there's no "no data available"
+        fallback for this endpoint the way there is for e.g. /quality."""
         resp = client.post("/api/v1/index/calculate", json=VALID_CALCULATE_REQUEST)
         data = resp.json()
-        assert data["data_source"] == "synthetic"
+        assert data["data_source"] == "real"
 
-        # Each route index should also be labeled
+        for ri in data["route_indices"]:
+            assert ri["data_source"] == "real"
+
+    def test_synthetic_label_when_observations_marked_synthetic(self, client):
+        payload = {
+            **VALID_CALCULATE_REQUEST,
+            "observations": [{**VALID_OBSERVATION, "source": "synthetic"}],
+        }
+        resp = client.post("/api/v1/index/calculate", json=payload)
+        data = resp.json()
+        assert data["data_source"] == "synthetic"
         for ri in data["route_indices"]:
             assert ri["data_source"] == "synthetic"
 

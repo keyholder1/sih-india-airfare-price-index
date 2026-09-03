@@ -7,7 +7,7 @@ so it appears in the auto-generated Swagger/OpenAPI docs.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -99,6 +99,51 @@ class IndexCalculateRequest(BaseModel):
             ]
         }
     }
+
+
+# ── Forecasting support ─────────────────────────────────────────────
+# The forecasting endpoints (api/forecasting_routes.py) work directly off
+# raw fare observations, same as the underlying index_engine/forecasting
+# packages, rather than the simplified route/fare/date/source shape
+# ObservationInput uses above -- a caller with data_contract.md-shaped
+# payloads (e.g. from the scraper) can pass them through unchanged.
+
+
+class FareObservationIn(BaseModel):
+    """One fare observation, full data_contract.md shape. Extra fields
+    (source, timestamp, fare_class, etc.) are accepted and passed
+    straight through to the engine."""
+
+    model_config = {"extra": "allow"}
+
+    observation_id: str
+    airline: str
+    origin: str
+    destination: str
+    flight_date: str
+    booking_date: str
+    total_fare: float
+    currency: str
+
+
+class RouteWeightIn(BaseModel):
+    origin: str
+    destination: str
+    weight: float
+    effective_from: Optional[str] = None
+    effective_to: Optional[str] = None
+    source: Optional[str] = None
+
+
+class IndexConfigIn(BaseModel):
+    representative_method: str = "median"
+    trimmed_mean_proportion: float = 0.1
+    outlier_method: str = "iqr"
+    outlier_iqr_multiplier: float = 1.5
+    fare_field: str = "total_fare"
+    booking_horizon_filter: Optional[str] = None
+    min_observations_per_route_period: int = 3
+    aggregation_method: str = "arithmetic"
 
 
 class RouteIndexResponse(BaseModel):
