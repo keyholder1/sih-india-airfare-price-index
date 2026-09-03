@@ -5,6 +5,7 @@
  */
 import {
   API_BASE_URL,
+  API_KEY,
   DATA_MODE,
   MOCK_LATENCY_MS,
 } from "./dataSource";
@@ -26,9 +27,9 @@ function delay<T>(value: T): Promise<T> {
 }
 
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { Accept: "application/json" },
-  });
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (API_KEY) headers["X-API-Key"] = API_KEY;
+  const res = await fetch(`${API_BASE_URL}${path}`, { headers });
   if (!res.ok) {
     throw new Error(`API ${path} responded ${res.status} ${res.statusText}`);
   }
@@ -36,39 +37,62 @@ async function apiGet<T>(path: string): Promise<T> {
 }
 
 // --- endpoints ---------------------------------------------------------------
-// The `api` branches are placeholders; the backend team owns the final paths.
-// See docs note in getDataStatus() for what the API must additionally provide.
+// Backend: api/routes/analytics.py, mounted at /api/v1/analytics* (see
+// api/main.py). Every response here is the engine's own dataclass
+// .to_dict() shape -- the same contract these types were written against
+// (see each type file's header comment in ../types/).
 
 export function getAnalytics(): Promise<AnalyticsResult> {
-  if (DATA_MODE === "api") return apiGet<AnalyticsResult>("/api/analytics");
+  if (DATA_MODE === "api") return apiGet<AnalyticsResult>("/api/v1/analytics");
   return delay(analyticsFixture as unknown as AnalyticsResult);
 }
 
+/**
+ * Covers the whole demo year so real scraper output lands wherever it
+ * exists on the backend (see src/engine/data_access.py) regardless of
+ * which months that happens to be; months without data come back with
+ * null values (see IndexTimeseriesPoint), never fabricated.
+ */
+const TIMESERIES_START = "2026-01";
+const TIMESERIES_END = "2026-12";
+
 export function getTimeseries(): Promise<IndexTimeseriesPoint[]> {
-  if (DATA_MODE === "api") return apiGet<IndexTimeseriesPoint[]>("/api/index/timeseries");
+  if (DATA_MODE === "api") {
+    return apiGet<IndexTimeseriesPoint[]>(
+      `/api/v1/analytics/timeseries?start_date=${TIMESERIES_START}&end_date=${TIMESERIES_END}`
+    );
+  }
   return delay(timeseriesFixture as unknown as IndexTimeseriesPoint[]);
 }
 
 export function getRecommendedRoutes(): Promise<RecommendedRoutesFile> {
-  if (DATA_MODE === "api") return apiGet<RecommendedRoutesFile>("/api/routes/recommended");
+  if (DATA_MODE === "api") return apiGet<RecommendedRoutesFile>("/api/v1/analytics/routes/recommended");
   return delay(routesFixture as unknown as RecommendedRoutesFile);
 }
 
 export function getDataQuality(): Promise<DataQualityResult> {
-  if (DATA_MODE === "api") return apiGet<DataQualityResult>("/api/data-quality");
+  if (DATA_MODE === "api") return apiGet<DataQualityResult>("/api/v1/analytics/data-quality");
   return delay(dataQualityFixture as unknown as DataQualityResult);
 }
 
 /**
- * Provenance of the current figures.
- *
- * TODO(backend/scraper team): expose this as a real field on the analytics
- * response — `{ level: "LIVE" | "PUBLIC" | "SYNTHETIC", label, detail, as_of }`.
- * Until then it is derived here: airfare observations are synthetic, so the
- * whole index is a demonstration of the pipeline, not a measurement.
+ * Provenance of the current figures. Derived client-side from whether the
+ * backend actually had real (non-mock) scraped observations to compute
+ * from -- see src/engine/real_adapters.py / data_access.py's is_mock
+ * handling, which is the same signal api/v1/dashboard/summary's
+ * data_source field reflects.
  */
 export async function getDataStatus(): Promise<DataStatus> {
   const analytics = await getAnalytics();
+  const hasRealData = analytics.price_index.national_index !== null && DATA_MODE === "api";
+  if (hasRealData) {
+    return {
+      level: "LIVE",
+      label: "Live scraped data",
+      detail: "Airfare observations behind these figures were collected by the scraper, not fabricated.",
+      asOf: analytics.price_index.current_period,
+    };
+  }
   return {
     level: "SYNTHETIC",
     label: "Demonstration / synthetic data",
