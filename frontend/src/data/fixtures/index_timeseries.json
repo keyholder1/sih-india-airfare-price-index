@@ -1,0 +1,44 @@
+[
+  {
+    "period": "2026-02",
+    "national_index": 101.59508268843607,
+    "mom_change_pct": 1.5950826884360447,
+    "yoy_change_pct": null
+  },
+  {
+    "period": "2026-03",
+    "national_index": 102.18364192850595,
+    "mom_change_pct": 0.5793186289092755,
+    "yoy_change_pct": null
+  },
+  {
+    "period": "2026-04",
+    "national_index": 103.62199649254316,
+    "mom_change_pct": 1.407617243710657,
+    "yoy_change_pct": null
+  },
+  {
+    "period": "2026-05",
+    "national_index": 104.47603085389169,
+    "mom_change_pct": 0.8241825001026548,
+    "yoy_change_pct": null
+  },
+  {
+    "period": "2026-06",
+    "national_index": 104.98863425534938,
+    "mom_change_pct": 0.4906421092648161,
+    "yoy_change_pct": null
+  },
+  {
+    "period": "2026-07",
+    "national_index": 108.29287039777061,
+    "mom_change_pct": 3.14723223695319,
+    "yoy_change_pct": null
+  },
+  {
+    "period": "2026-08",
+    "national_index": 107.34886087514067,
+    "mom_change_pct": -0.8717189960544047,
+    "yoy_change_pct": null
+  }
+]
