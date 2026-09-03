@@ -1,0 +1,283 @@
+{
+  "run_id": "run_20260903T101855Z",
+  "mode": "live",
+  "started_at": "2026-09-03T10:18:55.233529+00:00",
+  "finished_at": "2026-09-03T10:34:20.904527+00:00",
+  "routes_requested": 18,
+  "routes_successful": 18,
+  "routes_failed": 0,
+  "observations_collected": 3361,
+  "source_summaries": [
+    {
+      "source": "SerpApi (Google Flights)",
+      "routes_requested": 18,
+      "routes_successful": 18,
+      "routes_failed": 0,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 3361,
+      "failure_breakdown": {}
+    },
+    {
+      "source": "IndiGo",
+      "routes_requested": 18,
+      "routes_successful": 0,
+      "routes_failed": 18,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 0,
+      "failure_breakdown": {
+        "SOURCE_UNAVAILABLE": 108
+      }
+    },
+    {
+      "source": "Air India",
+      "routes_requested": 18,
+      "routes_successful": 0,
+      "routes_failed": 18,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 0,
+      "failure_breakdown": {
+        "SOURCE_UNAVAILABLE": 108
+      }
+    },
+    {
+      "source": "MakeMyTrip",
+      "routes_requested": 18,
+      "routes_successful": 0,
+      "routes_failed": 18,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 0,
+      "failure_breakdown": {
+        "SOURCE_UNAVAILABLE": 108
+      }
+    },
+    {
+      "source": "Cleartrip",
+      "routes_requested": 18,
+      "routes_successful": 0,
+      "routes_failed": 18,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 0,
+      "failure_breakdown": {
+        "SOURCE_UNAVAILABLE": 108
+      }
+    },
+    {
+      "source": "Amadeus Self-Service Flight Offers Search API",
+      "routes_requested": 18,
+      "routes_successful": 0,
+      "routes_failed": 18,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 0,
+      "failure_breakdown": {
+        "SOURCE_UNAVAILABLE": 108
+      }
+    },
+    {
+      "source": "Duffel API",
+      "routes_requested": 18,
+      "routes_successful": 0,
+      "routes_failed": 18,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 0,
+      "failure_breakdown": {
+        "SOURCE_UNAVAILABLE": 108
+      }
+    },
+    {
+      "source": "Travelpayouts / Aviasales",
+      "routes_requested": 18,
+      "routes_successful": 0,
+      "routes_failed": 18,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 0,
+      "failure_breakdown": {
+        "SOURCE_UNAVAILABLE": 108
+      }
+    },
+    {
+      "source": "Aviationstack API",
+      "routes_requested": 18,
+      "routes_successful": 0,
+      "routes_failed": 18,
+      "routes_attempted": [
+        "AMD-DEL",
+        "BLR-BOM",
+        "BLR-DEL",
+        "BLR-HYD",
+        "BOM-BLR",
+        "BOM-DEL",
+        "CCU-DEL",
+        "DEL-AMD",
+        "DEL-BLR",
+        "DEL-BOM",
+        "DEL-CCU",
+        "DEL-HYD",
+        "DEL-MAA",
+        "DEL-PNQ",
+        "HYD-BLR",
+        "HYD-DEL",
+        "MAA-DEL",
+        "PNQ-DEL"
+      ],
+      "observations_collected": 0,
+      "failure_breakdown": {
+        "SOURCE_UNAVAILABLE": 108
+      }
+    }
+  ],
+  "failure_reasons": {
+    "SOURCE_UNAVAILABLE": 864
+  }
+}

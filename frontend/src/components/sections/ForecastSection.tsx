@@ -14,7 +14,7 @@ export function ForecastSection() {
   return (
     <section className="scroll-mt-20">
       <SectionHeader
-        index={4}
+        index={7}
         title="Forecast & CPI benchmark"
         description="A one-period-ahead baseline forecast, and how our index compares to MoSPI's official CPI Airfare sub-index over any overlapping months."
       />

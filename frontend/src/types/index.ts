@@ -1,6 +1,7 @@
 export * from "./analytics";
 export * from "./routes";
 export * from "./dataQuality";
+export * from "./news";
 export * from "./forecast";
 
 /**

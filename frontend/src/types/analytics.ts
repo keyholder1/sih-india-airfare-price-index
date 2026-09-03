@@ -151,6 +151,19 @@ export interface RouteMapObject {
   status: RouteStatus;
 }
 
+/**
+ * Origin x Destination inflation matrix (`AirfareAnalytics.calculate(...)
+ * .inflation_matrix(metric=...)`, JSON-encoded by
+ * api/services/analytics_service.py). `values[i][j]` corresponds to
+ * `origins[i]` -> `destinations[j]`; `null` means no data for that pair,
+ * never zero -- a route with no data is not a route with zero inflation.
+ */
+export interface InflationMatrix {
+  origins: string[];
+  destinations: string[];
+  values: (number | null)[][];
+}
+
 export interface AnalyticsResult {
   price_index: PriceIndex;
   volatility: VolatilityResult;
@@ -166,6 +179,9 @@ export interface AnalyticsResult {
    *  provenance from DATA_MODE or from whether a value happens to be
    *  non-null (see data_access.classify_provenance). */
   data_source: DataSource;
+  /** Not present in mock-mode fixtures (older contract) -- optional. */
+  inflation_matrix_mom?: InflationMatrix;
+  inflation_matrix_yoy?: InflationMatrix;
 }
 
 /** One point of `POST /index/timeseries` output (index_timeseries.json). */

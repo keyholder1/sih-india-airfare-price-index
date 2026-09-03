@@ -16,6 +16,7 @@ import type {
   ForecastPayload,
   IndexTimeseriesPoint,
   RecommendedRoutesFile,
+  RouteContext,
 } from "../types";
 
 import analyticsFixture from "./fixtures/analytics.json";
@@ -79,6 +80,22 @@ export function getDataQuality(): Promise<DataQualityResult> {
 /** No mock fixture exists for this (added after the fixture set was
  * frozen) -- mock mode returns a small, clearly-labelled placeholder
  * instead of a network call. */
+function mockRouteContext(route: string): RouteContext {
+  return {
+    route,
+    significant_movement: false,
+    movement_direction: null,
+    movement_pct: null,
+    events: [],
+    data_source: "synthetic",
+  };
+}
+
+export function getRouteContext(route: string): Promise<RouteContext> {
+  if (DATA_MODE === "api") return apiGet<RouteContext>(`/api/v1/routes/${route}/context`);
+  return delay(mockRouteContext(route));
+}
+
 function mockForecast(): ForecastPayload {
   return {
     national_forecast: {
