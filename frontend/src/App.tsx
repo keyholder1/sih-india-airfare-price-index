@@ -4,6 +4,7 @@ import { Loading, ErrorState } from "./components/primitives/Loading";
 import { NationalIndexSection } from "./components/sections/NationalIndexSection";
 import { IndexContributionSection } from "./components/sections/IndexContributionSection";
 import { RouteIntelligenceSection } from "./components/sections/RouteIntelligenceSection";
+import { ForecastSection } from "./components/sections/ForecastSection";
 import { useAnalytics, useDataStatus } from "./hooks/useAnalytics";
 import { useTimeseries } from "./hooks/useTimeseries";
 
@@ -37,7 +38,8 @@ export default function App() {
             selectedRoute={selectedRoute}
             onRouteSelect={setSelectedRoute}
           />
-          {/* Sections 4–5 land in the next steps. */}
+          <ForecastSection />
+          {/* Further sections land in the next steps. */}
         </div>
       )}
     </DashboardShell>

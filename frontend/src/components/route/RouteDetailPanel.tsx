@@ -4,6 +4,7 @@ import {
   formatFractionPct,
   formatINR,
   formatIndex,
+  formatPeriod,
   formatPoints,
   formatSignedPct,
   routeLabel,
@@ -12,6 +13,7 @@ import { RouteStatusPill } from "./RouteStatusPill";
 
 interface RouteDetailPanelProps {
   route: RouteDetail | null;
+  basePeriod: string;
   onClear: () => void;
 }
 
@@ -39,7 +41,7 @@ function Metric({
   );
 }
 
-export function RouteDetailPanel({ route, onClear }: RouteDetailPanelProps) {
+export function RouteDetailPanel({ route, basePeriod, onClear }: RouteDetailPanelProps) {
   if (!route) {
     return (
       <div className="flex h-full min-h-[220px] flex-col items-center justify-center rounded-panel border border-dashed border-hairline-strong bg-surface-sunken p-6 text-center">
@@ -138,7 +140,7 @@ export function RouteDetailPanel({ route, onClear }: RouteDetailPanelProps) {
       {/* index vs base period */}
       <div className="mt-5 border-t border-hairline pt-4">
         <div className="flex items-baseline justify-between text-[0.66rem] uppercase tracking-wide text-ink-faint">
-          <span>Fare vs base period (Jan = 100)</span>
+          <span>Fare vs base period ({formatPeriod(basePeriod)} = 100)</span>
           <span className="tabular text-ink-muted">
             {formatINR(route.basePeriodFare)} → {formatINR(route.periodFare)}
           </span>

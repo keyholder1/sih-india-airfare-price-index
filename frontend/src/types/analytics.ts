@@ -153,6 +153,11 @@ export interface AnalyticsResult {
   route_map_objects: RouteMapObject[];
   traffic_weight_coverage: number | null;
   affordability: unknown | null;
+  /** True only when the observations behind this payload are real scraped
+   *  fares, not the synthetic demo dataset. Authoritative -- never infer
+   *  provenance from DATA_MODE or from whether a value happens to be
+   *  non-null (see data_access.load_validated_observations). */
+  is_real: boolean;
 }
 
 /** One point of `POST /index/timeseries` output (index_timeseries.json). */

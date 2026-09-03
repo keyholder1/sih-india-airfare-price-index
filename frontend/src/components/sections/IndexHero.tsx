@@ -11,18 +11,28 @@ import {
 
 interface IndexHeroProps {
   priceIndex: PriceIndex;
+  trafficWeightCoverage: number | null;
 }
 
-function MetaItem({ label, value }: { label: string; value: string }) {
+function MetaItem({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+}) {
   return (
     <div>
       <dt className="text-[0.68rem] uppercase tracking-wide text-ink-faint">{label}</dt>
       <dd className="mt-0.5 text-sm font-medium tabular text-ink">{value}</dd>
+      {sub && <p className="mt-0.5 text-[0.65rem] text-ink-faint">{sub}</p>}
     </div>
   );
 }
 
-export function IndexHero({ priceIndex: pi }: IndexHeroProps) {
+export function IndexHero({ priceIndex: pi, trafficWeightCoverage }: IndexHeroProps) {
   return (
     <Panel className="flex h-full flex-col justify-between p-6">
       <div>
@@ -47,13 +57,23 @@ export function IndexHero({ priceIndex: pi }: IndexHeroProps) {
         </div>
       </div>
 
-      <dl className="mt-8 grid grid-cols-3 gap-4 border-t border-hairline pt-4">
+      <dl className="mt-8 grid grid-cols-2 gap-4 border-t border-hairline pt-4 sm:grid-cols-4">
         <MetaItem
           label="Routes covered"
           value={`${pi.routes_covered}/${pi.routes_total}`}
+          sub="tracked routes reporting"
         />
         <MetaItem label="Observations used" value={formatInt(pi.observations_used)} />
-        <MetaItem label="Weight coverage" value={formatFractionPct(pi.coverage_rate)} />
+        <MetaItem
+          label="Route coverage"
+          value={formatFractionPct(pi.coverage_rate)}
+          sub="of tracked routes, not national traffic"
+        />
+        <MetaItem
+          label="Traffic coverage"
+          value={formatFractionPct(trafficWeightCoverage)}
+          sub="share of national domestic pax"
+        />
       </dl>
     </Panel>
   );

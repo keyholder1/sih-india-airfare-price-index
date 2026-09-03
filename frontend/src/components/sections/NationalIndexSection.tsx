@@ -20,7 +20,10 @@ export function NationalIndexSection({
         description="One number per month tracking how expensive it is, on a weighted basket of routes, to fly domestically in India relative to the base period."
       />
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-        <IndexHero priceIndex={analytics.price_index} />
+        <IndexHero
+          priceIndex={analytics.price_index}
+          trafficWeightCoverage={analytics.traffic_weight_coverage}
+        />
         <IndexTrend data={timeseries ?? []} />
       </div>
     </section>

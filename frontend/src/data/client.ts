@@ -13,6 +13,7 @@ import type {
   AnalyticsResult,
   DataQualityResult,
   DataStatus,
+  ForecastPayload,
   IndexTimeseriesPoint,
   RecommendedRoutesFile,
 } from "../types";
@@ -75,16 +76,43 @@ export function getDataQuality(): Promise<DataQualityResult> {
   return delay(dataQualityFixture as unknown as DataQualityResult);
 }
 
+/** No mock fixture exists for this (added after the fixture set was
+ * frozen) -- mock mode returns a small, clearly-labelled placeholder
+ * instead of a network call. */
+function mockForecast(): ForecastPayload {
+  return {
+    national_forecast: {
+      forecast_period: "2026-09",
+      forecast_value: null,
+      model_used: "naive",
+      horizon: 1,
+      training_period: [],
+      data_points_used: 0,
+      lower_bound: null,
+      upper_bound: null,
+      status: "INSUFFICIENT_DATA",
+      is_synthetic_data: true,
+      notes: "Mock mode has no forecasting fixture.",
+    },
+    cpi_benchmark: null,
+  };
+}
+
+export function getForecast(): Promise<ForecastPayload> {
+  if (DATA_MODE === "api") return apiGet<ForecastPayload>("/api/v1/analytics/forecast");
+  return delay(mockForecast());
+}
+
 /**
- * Provenance of the current figures. Derived client-side from whether the
- * backend actually had real (non-mock) scraped observations to compute
- * from -- see src/engine/real_adapters.py / data_access.py's is_mock
- * handling, which is the same signal api/v1/dashboard/summary's
- * data_source field reflects.
+ * Provenance of the current figures. Read directly from the backend's own
+ * `is_real` field (api/services/analytics_service.py, sourced from
+ * data_access.load_validated_observations) -- never guessed client-side.
+ * A non-null national_index says nothing about provenance: the engine
+ * happily computes an index from synthetic data too.
  */
 export async function getDataStatus(): Promise<DataStatus> {
   const analytics = await getAnalytics();
-  const hasRealData = analytics.price_index.national_index !== null && DATA_MODE === "api";
+  const hasRealData = analytics.is_real;
   if (hasRealData) {
     return {
       level: "LIVE",

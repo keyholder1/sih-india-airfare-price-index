@@ -57,7 +57,7 @@ def _period_bounds(observations: List[Dict[str, Any]]) -> tuple[str, str]:
 def get_analytics() -> Dict[str, Any]:
     """Full AnalyticsResult.to_dict() -- national index, volatility,
     route inflation, rankings, route map objects, traffic coverage."""
-    observations, _is_real = data_access.load_validated_observations()
+    observations, is_real = data_access.load_validated_observations()
     base_period, current_period = _period_bounds(observations)
     df = pd.DataFrame(observations)
     weights, weights_real = data_access.build_weights(observations)
@@ -74,6 +74,11 @@ def get_analytics() -> Dict[str, Any]:
     result.traffic_weight_coverage = traffic_coverage
 
     payload = result.to_dict()
+    # Provenance of the observations behind this payload -- see
+    # data_access.load_validated_observations's own is_real contract.
+    # The frontend must show this rather than guess it (see
+    # frontend/src/data/client.ts's getDataStatus).
+    payload["is_real"] = is_real
     # Not part of AnalyticsResult.to_dict() upstream -- inflation_matrix()
     # is a separate method on the result object (see index_engine.analytics
     # .AnalyticsResult / route_analysis.inflation_matrix). Attached here so

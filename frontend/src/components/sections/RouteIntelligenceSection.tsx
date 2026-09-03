@@ -103,6 +103,7 @@ export function RouteIntelligenceSection({
         <div className="lg:pt-9">
           <RouteDetailPanel
             route={selectedDetail}
+            basePeriod={analytics.price_index.base_period}
             onClear={() => onRouteSelect(null)}
           />
         </div>
