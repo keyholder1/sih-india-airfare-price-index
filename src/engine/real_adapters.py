@@ -15,14 +15,18 @@ scraped (not scraper mock output, not this file's own demo fallback),
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
 from index_engine import AirfarePriceIndex
+from index_engine.gdelt_news_provider import GdeltNewsProvider
 from index_engine.mock_news_provider import MockNewsProvider
 from index_engine.news_context import NewsContextService, route_movement_from_row
+from index_engine.news_provider import NewsProvider
+from index_engine.newsdata_news_provider import ENV_API_KEY as NEWSDATA_ENV_API_KEY, NewsdataNewsProvider
 from index_engine.route_analysis import RouteInflationRow
 from index_engine.utils import pct_change, shift_period
 
@@ -43,15 +47,23 @@ from src.engine.protocols import (
 
 REPO_ROOT = data_access.REPO_ROOT
 
-#: The mock news fixture data (mock_news_provider.DEMO_ARTICLES) is
-#: anchored around 2026-08-14 (see that module's docstring). No real news
-#: provider is wired in anywhere in this project yet, so every response
-#: from this adapter is "synthetic" regardless of whether the underlying
-#: fare data is real -- news context is a separate, still-mock layer.
-#: Naive, matching mock_news_provider.DEMO_ARTICLES's own naive
-#: published_at timestamps (mixing naive/aware datetimes raises there).
-_NEWS_DEMO_ANCHOR = datetime(2026, 8, 14, 9, 0, 0)
-_NEWS_DATA_SOURCE = "synthetic"
+#: News provider selection, in priority order: NEWS_PROVIDER=mock forces
+#: the deterministic fixture provider (the test suite does this -- see
+#: tests/conftest.py -- so pytest never depends on a live network call);
+#: otherwise NEWSDATA_API_KEY (if set) selects newsdata.io; otherwise
+#: GDELT (free, keyless, but not always reachable from every network).
+#: MockNewsProvider's fixture data is anchored around 2026-08-14 (see
+#: that module's docstring) -- the mock path needs its `as_of` to match
+#: that fixed window; every real path searches around the actual current
+#: time.
+_USE_MOCK_NEWS = os.environ.get("NEWS_PROVIDER", "").lower() == "mock"
+_MOCK_NEWS_ANCHOR = datetime(2026, 8, 14, 9, 0, 0)  # naive, matches DEMO_ARTICLES
+
+
+def _default_news_provider() -> NewsProvider:
+    if os.environ.get(NEWSDATA_ENV_API_KEY):
+        return NewsdataNewsProvider()
+    return GdeltNewsProvider()
 
 
 def _letter_grade(score_0_100: float) -> str:
@@ -329,14 +341,21 @@ class RealNewsContextEngine:
     """Real implementation of ``NewsContextProtocol``.
 
     Wired to the real ``NewsContextService`` and route-movement
-    computation, but backed by ``MockNewsProvider`` -- no real news API
-    is connected anywhere in this project yet (see news_provider.py).
-    Every response is therefore honestly labeled "synthetic" regardless
-    of whether the underlying fare data is real; see module docstring.
+    computation. See module docstring for provider selection (newsdata.io
+    if NEWSDATA_API_KEY is set, else GDELT, else MockNewsProvider in
+    tests). Each event is labeled "real"/"synthetic" from its own
+    article's is_mock flag, not a fixed constant, so a mixed-mode
+    response is never mislabeled either way.
     """
 
-    def __init__(self) -> None:
-        self._service = NewsContextService(provider=MockNewsProvider())
+    def __init__(self, provider: Optional[NewsProvider] = None) -> None:
+        if provider is not None:
+            self._provider = provider
+        elif _USE_MOCK_NEWS:
+            self._provider = MockNewsProvider()
+        else:
+            self._provider = _default_news_provider()
+        self._service = NewsContextService(provider=self._provider)
 
     async def get_route_context(self, route_code: str) -> RouteContext:
         observations, _is_real_data = data_access.load_validated_observations()
@@ -374,7 +393,9 @@ class RealNewsContextEngine:
             status=current_ri.status,
         )
 
-        movement = route_movement_from_row(row, period=current_period, as_of=_NEWS_DEMO_ANCHOR, metric="mom")
+        as_of = _MOCK_NEWS_ANCHOR if _USE_MOCK_NEWS else datetime.utcnow()
+        movement = route_movement_from_row(row, period=current_period, as_of=as_of, metric="mom")
+        overall_data_source = "synthetic" if _USE_MOCK_NEWS else "real"
         if movement is None:
             return RouteContext(
                 route=route_code,
@@ -382,7 +403,7 @@ class RealNewsContextEngine:
                 movement_direction=None,
                 movement_pct=None,
                 events=[],
-                data_source=_NEWS_DATA_SOURCE,
+                data_source=overall_data_source,
             )
 
         context_result = self._service.get_context(movement)
@@ -395,7 +416,7 @@ class RealNewsContextEngine:
                 publication_date=match.article.published_at.date().isoformat(),
                 url=match.article.url,
                 relevance_score=match.relevance_score,
-                data_source=_NEWS_DATA_SOURCE,
+                data_source="synthetic" if match.article.is_mock else "real",
             )
             for match in context_result.matches
         ]
@@ -406,5 +427,5 @@ class RealNewsContextEngine:
             movement_direction=direction_map.get(movement.direction),
             movement_pct=movement.change_pct,
             events=events,
-            data_source=_NEWS_DATA_SOURCE,
+            data_source=overall_data_source,
         )
