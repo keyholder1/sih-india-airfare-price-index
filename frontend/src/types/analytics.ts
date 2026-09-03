@@ -168,11 +168,14 @@ export interface InflationMatrix {
  *  when the backend was given an income series to compare against (see
  *  data/benchmarks/mospi_income_README.md) -- otherwise the whole
  *  AnalyticsResult.affordability field is null, never a fabricated
- *  result. `source` on the underlying series is
- *  "MOSPI_PLFS_ANNUAL_HELD_FLAT": a real annual government wage figure
- *  held flat across its calendar year's months, not a real monthly
- *  income signal -- see that README before presenting this as MoM
- *  income movement. */
+ *  result. `source` is one of two honest tags, never a real monthly
+ *  income signal either way -- see that README before presenting this
+ *  as MoM income movement:
+ *    "MOSPI_PLFS_ANNUAL_HELD_FLAT" - a real published annual figure,
+ *      held flat across that year's months.
+ *    "MOSPI_PLFS_LATEST_CARRIED_FORWARD" - the latest published year's
+ *      real figure, carried forward into years MoSPI hasn't published
+ *      yet (this project's own fare data is always "now or later"). */
 export interface AffordabilityResult {
   period: string;
   indicator: string | null;

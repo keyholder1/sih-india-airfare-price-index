@@ -71,6 +71,24 @@ published. Do not present a MoM affordability delta as reflecting real
 monthly income movement — it reflects real monthly *airfare* movement
 against a real but slow-moving income baseline.
 
+**Carried forward past 2025, deliberately:** this project's own fare data
+is always dated "now or later" (the scraper only ever collects current,
+forward-looking quotes — see `docs/scraper.md` §10), while MoSPI's
+wage/earnings indicators lag roughly a year behind. Under a strict
+"only exact overlapping periods" rule, affordability would report
+`DATA_UNAVAILABLE` for every period this project could ever produce, not
+just until the next MoSPI release. Instead, `mospi_income.py` carries
+2025's real value forward for `CARRY_FORWARD_YEARS` (5) more years,
+tagged `source="MOSPI_PLFS_LATEST_CARRIED_FORWARD"` — a distinct tag from
+`"MOSPI_PLFS_ANNUAL_HELD_FLAT"` (a period MoSPI has actually published
+for) so the two are never presented as the same kind of number. This
+mirrors the precedent already set by `traffic.to_engine_weights()`'s own
+`effective_from`/`effective_to` reasoning for DGCA route weights: a real
+number that hasn't been refreshed yet is a materially different thing
+from an invented one. Refresh this CSV (re-run the retrieval in this
+file's own provenance section) once MoSPI publishes 2026 figures, rather
+than let the carry-forward window silently expire.
+
 ## What this is NOT
 
 - **Not** an official CPI weight or expenditure series — it is a labour
