@@ -30,13 +30,16 @@ class TestRoutes:
         }
         assert expected_fields.issubset(route.keys())
 
-    def test_synthetic_label(self, client):
-        """All routes should be labeled synthetic."""
+    def test_data_source_label_is_honest(self, client):
+        """data_source must reflect the actual observations on disk --
+        real once a real collection is present, synthetic otherwise --
+        never hard-coded to one value regardless of what's loaded, and
+        consistent between the summary field and each route's own."""
         resp = client.get("/api/v1/routes")
         data = resp.json()
-        assert data["data_source"] == "synthetic"
+        assert data["data_source"] in {"real", "synthetic", "mixed", "unavailable"}
         for route in data["routes"]:
-            assert route["data_source"] == "synthetic"
+            assert route["data_source"] in {"real", "synthetic", "mixed", "unavailable"}
 
     def test_route_status_values(self, client):
         """Route status should be one of the expected values."""

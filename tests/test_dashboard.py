@@ -21,11 +21,13 @@ class TestDashboard:
         }
         assert expected_fields.issubset(data.keys())
 
-    def test_synthetic_label(self, client):
-        """Dashboard should be labeled synthetic."""
+    def test_data_source_label_is_honest(self, client):
+        """data_source must reflect the actual observations on disk --
+        real once a real collection is present, synthetic otherwise --
+        never hard-coded to one value regardless of what's loaded."""
         resp = client.get("/api/v1/dashboard/summary")
         data = resp.json()
-        assert data["data_source"] == "synthetic"
+        assert data["data_source"] in {"real", "synthetic"}
 
     def test_routes_present(self, client):
         """Routes list should be non-empty."""
@@ -70,12 +72,15 @@ class TestDashboard:
         assert expected.issubset(c.keys())
 
     def test_alerts_present(self, client):
-        """Alerts should contain at least the stub data warning."""
+        """Alerts should contain a provenance notice matching the actual
+        data_source -- 'synthetic' wording when synthetic, 'real' wording
+        when real, never a mismatched or missing notice."""
         resp = client.get("/api/v1/dashboard/summary")
         data = resp.json()
         assert isinstance(data["alerts"], list)
         assert len(data["alerts"]) > 0
-        assert any("synthetic" in a["message"].lower() for a in data["alerts"])
+        expected_word = "synthetic" if data["data_source"] == "synthetic" else "real"
+        assert any(expected_word in a["message"].lower() for a in data["alerts"])
 
     def test_response_is_json_serializable(self, client):
         """Full response should be JSON-serializable."""

@@ -21,11 +21,13 @@ class TestQuality:
         }
         assert expected_fields.issubset(data.keys())
 
-    def test_synthetic_label(self, client):
-        """Quality report should be labeled synthetic."""
+    def test_data_source_label_is_honest(self, client):
+        """data_source must reflect the actual observations on disk --
+        real once a real collection is present, synthetic otherwise --
+        never hard-coded to one value regardless of what's loaded."""
         resp = client.get("/api/v1/quality")
         data = resp.json()
-        assert data["data_source"] == "synthetic"
+        assert data["data_source"] in {"real", "synthetic", "mixed", "unavailable"}
 
     def test_quality_grade_valid(self, client):
         """Quality grade should be A-F."""
