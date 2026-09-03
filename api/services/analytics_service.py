@@ -24,12 +24,14 @@ import pandas as pd
 
 import data_quality as data_quality_mod
 from index_engine.analytics import AirfareAnalytics
+from index_engine.mospi_income import default_mospi_income_path, load_mospi_income_series
 from index_engine.utils import shift_period
 
 from src.engine import data_access
 
 _RECOMMENDED_ROUTES_PATH = data_access.REPO_ROOT / "data" / "routes" / "recommended_routes.json"
 _MOSPI_CPI_PATH = data_access.REPO_ROOT / "data" / "benchmarks" / "cpi_1337.xlsx"
+_MOSPI_INCOME_PATH = default_mospi_income_path(data_access.REPO_ROOT)
 
 
 def _matrix_to_json(matrix: pd.DataFrame) -> Dict[str, Any]:
@@ -69,8 +71,19 @@ def get_analytics() -> Dict[str, Any]:
         # figure docs/sih_pitch.md reports (e.g. the 8.8% example).
         traffic_coverage = round(float(weights["national_weight"].sum()), 4)
 
+    # Real MoSPI PLFS wage/earnings series, held flat across each real
+    # value's calendar year -- see data/benchmarks/mospi_income_README.md.
+    # Never fabricated: an empty/missing file yields an empty income
+    # series, and calculate_affordability() reports DATA_UNAVAILABLE for
+    # a period with no matching row rather than inventing one.
+    income_series = load_mospi_income_series(_MOSPI_INCOME_PATH)
+
     engine = AirfareAnalytics(base_period=base_period, weights=weights if len(weights) else None)
-    result = engine.calculate(observations=df, current_period=current_period)
+    result = engine.calculate(
+        observations=df,
+        current_period=current_period,
+        income_series=income_series if len(income_series) else None,
+    )
     result.traffic_weight_coverage = traffic_coverage
 
     payload = result.to_dict()

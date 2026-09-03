@@ -164,6 +164,25 @@ export interface InflationMatrix {
   values: (number | null)[][];
 }
 
+/** index_engine.affordability.AffordabilityResult.to_dict(). Present only
+ *  when the backend was given an income series to compare against (see
+ *  data/benchmarks/mospi_income_README.md) -- otherwise the whole
+ *  AnalyticsResult.affordability field is null, never a fabricated
+ *  result. `source` on the underlying series is
+ *  "MOSPI_PLFS_ANNUAL_HELD_FLAT": a real annual government wage figure
+ *  held flat across its calendar year's months, not a real monthly
+ *  income signal -- see that README before presenting this as MoM
+ *  income movement. */
+export interface AffordabilityResult {
+  period: string;
+  indicator: string | null;
+  airfare_index: number | null;
+  income_index: number | null;
+  relative_affordability_index: number | null;
+  status: "OK" | "DATA_UNAVAILABLE";
+  source: string | null;
+}
+
 export interface AnalyticsResult {
   price_index: PriceIndex;
   volatility: VolatilityResult;
@@ -171,7 +190,7 @@ export interface AnalyticsResult {
   rankings: Record<RankingKey, RouteInflationRow[]>;
   route_map_objects: RouteMapObject[];
   traffic_weight_coverage: number | null;
-  affordability: unknown | null;
+  affordability: AffordabilityResult | null;
   /** Provenance of the observations behind this payload -- REAL only
    *  when every observation is genuinely scraped, MIXED when some are
    *  mock, SYNTHETIC when all are mock/demo, UNAVAILABLE when there was

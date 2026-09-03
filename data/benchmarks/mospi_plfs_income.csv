@@ -1,0 +1,5 @@
+year,value,unit,indicator,gender,sector,state,year_type,source_endpoint,retrieved_at
+2022,19315.50,INR,"Average wage/salary earnings during the preceding calendar month from regular wage/salaried employment",person,rural + urban,All India,Calendar Year,https://api.mospi.gov.in/api/plfs/getData?indicator_code=6&frequency_code=1,2026-09-04
+2023,20407.54,INR,"Average wage/salary earnings during the preceding calendar month from regular wage/salaried employment",person,rural + urban,All India,Calendar Year,https://api.mospi.gov.in/api/plfs/getData?indicator_code=6&frequency_code=1,2026-09-04
+2024,21454.87,INR,"Average wage/salary earnings during the preceding calendar month from regular wage/salaried employment",person,rural + urban,All India,Calendar Year,https://api.mospi.gov.in/api/plfs/getData?indicator_code=6&frequency_code=1,2026-09-04
+2025,22698.65,INR,"Average wage/salary earnings during the preceding calendar month from regular wage/salaried employment",person,rural + urban,All India,Calendar Year,https://api.mospi.gov.in/api/plfs/getData?indicator_code=6&frequency_code=1,2026-09-04
