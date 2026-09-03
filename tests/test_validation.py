@@ -47,3 +47,41 @@ def test_booking_after_flight_is_rejected():
     df = to_df([make_observation(flight_date="2026-01-01", booking_date="2026-02-01")])
     _, rejected = validate_observations(df)
     assert rejected["rejection_reason"].iloc[0] == REASON_IMPOSSIBLE_BOOKING_HORIZON
+
+
+# --- non-default fare_field ---------------------------------------------------
+
+
+def test_invalid_non_default_fare_field_is_rejected_even_when_total_fare_is_valid():
+    # total_fare (the always-required column) is perfectly valid here, but
+    # base_fare -- the *configured* comparable fare -- is missing. Without
+    # validating the configured fare_field, this row would silently pass
+    # validation, be counted in observations_used, and then contribute
+    # nothing (NaN, dropped) to the actual representative-fare calculation.
+    df = to_df([make_observation(base_fare=None, total_fare=5000.0)])
+    valid, rejected = validate_observations(df, fare_field="base_fare")
+    assert len(valid) == 0
+    assert rejected["rejection_reason"].iloc[0] == REASON_INVALID_FARE
+
+
+def test_negative_non_default_fare_field_is_rejected():
+    df = to_df([make_observation(base_fare=-100.0, total_fare=5000.0)])
+    valid, rejected = validate_observations(df, fare_field="base_fare")
+    assert len(valid) == 0
+    assert rejected["rejection_reason"].iloc[0] == REASON_INVALID_FARE
+
+
+def test_valid_non_default_fare_field_passes():
+    df = to_df([make_observation(base_fare=4400.0, total_fare=5000.0)])
+    valid, rejected = validate_observations(df, fare_field="base_fare")
+    assert len(valid) == 1
+    assert len(rejected) == 0
+
+
+def test_default_fare_field_behaviour_is_unaffected():
+    # total_fare-only validation (the default) must still work exactly as
+    # before regardless of what's in base_fare.
+    df = to_df([make_observation(base_fare=None, total_fare=5000.0)])
+    valid, rejected = validate_observations(df)
+    assert len(valid) == 1
+    assert len(rejected) == 0

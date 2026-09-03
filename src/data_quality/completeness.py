@@ -47,9 +47,19 @@ def compute_completeness(df: pd.DataFrame, config: DataQualityConfig) -> Complet
         records_missing_optional = int(missing_optional_mask.sum())
     else:
         # No optional columns sent at all: every row lacks all optional info.
+        missing_optional_mask = pd.Series(True, index=df.index)
         records_missing_optional = total
 
-    completeness_rate = records_with_all_required / total
+    if config.require_optional_fields_for_completeness:
+        # Stricter mode: a record only counts as "complete" if it also has
+        # every optional field the batch's schema carries (or, if none were
+        # sent at all, no record can be complete under this mode — that is
+        # the point of asking for a stricter rate).
+        fully_complete_mask = ~missing_required_mask & ~missing_optional_mask
+    else:
+        fully_complete_mask = ~missing_required_mask
+
+    completeness_rate = int(fully_complete_mask.sum()) / total
 
     return CompletenessReport(
         total_records=total,

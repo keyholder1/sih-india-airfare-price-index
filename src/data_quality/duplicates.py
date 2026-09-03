@@ -16,7 +16,13 @@ import pandas as pd
 from . import reason_codes as rc
 from .config import DataQualityConfig
 
-_POTENTIAL_DUP_GROUP_COLUMNS = ["_dq_airline", "_dq_origin", "_dq_destination", "flight_date", "booking_date"]
+#: All normalized (``_dq_``-prefixed) columns, deliberately -- grouping by
+#: the raw ``flight_date``/``booking_date`` strings would silently split
+#: identical dates written in different formats (e.g. "2026-02-10" vs.
+#: "2026-02-10T00:00:00") into different groups, so two near-identical
+#: fares for the same actual date from differently-formatted sources would
+#: never be compared and could never be flagged POTENTIAL_DUPLICATE.
+_POTENTIAL_DUP_GROUP_COLUMNS = ["_dq_airline", "_dq_origin", "_dq_destination", "_dq_flight_date", "_dq_booking_date"]
 
 
 def mark_duplicates(work: pd.DataFrame, config: DataQualityConfig) -> Tuple[pd.DataFrame, int, int]:
