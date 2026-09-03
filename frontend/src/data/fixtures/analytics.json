@@ -1049,5 +1049,111 @@
   ],
   "traffic_weight_coverage": 0.08808045214568311,
   "affordability": null,
-  "data_source": "SYNTHETIC"
+  "data_source": "SYNTHETIC",
+  "inflation_matrix_mom": {
+    "origins": [
+      "BLR",
+      "BOM",
+      "CCU",
+      "DEL",
+      "MAA"
+    ],
+    "destinations": [
+      "BLR",
+      "BOM",
+      "DEL",
+      "HYD",
+      "MAA"
+    ],
+    "values": [
+      [
+        null,
+        -0.96,
+        1.51,
+        2.98,
+        null
+      ],
+      [
+        1.51,
+        null,
+        -10.1,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        -2.48,
+        null,
+        null
+      ],
+      [
+        null,
+        0.66,
+        null,
+        2.07,
+        -2.61
+      ],
+      [
+        null,
+        null,
+        -1.12,
+        null,
+        null
+      ]
+    ]
+  },
+  "inflation_matrix_yoy": {
+    "origins": [
+      "BLR",
+      "BOM",
+      "CCU",
+      "DEL",
+      "MAA"
+    ],
+    "destinations": [
+      "BLR",
+      "BOM",
+      "DEL",
+      "HYD",
+      "MAA"
+    ],
+    "values": [
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    ]
+  }
 }
