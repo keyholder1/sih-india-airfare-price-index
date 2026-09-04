@@ -8,6 +8,7 @@ import { DataQualitySection } from "./components/sections/DataQualitySection";
 import { RiskGeographySection } from "./components/sections/RiskGeographySection";
 import { NewsContextSection } from "./components/sections/NewsContextSection";
 import { ForecastSection } from "./components/sections/ForecastSection";
+import { RouteLookupSection } from "./components/sections/RouteLookupSection";
 import { useAnalytics, useDataStatus } from "./hooks/useAnalytics";
 import { useTimeseries } from "./hooks/useTimeseries";
 import { useDataQuality } from "./hooks/useDataQuality";
@@ -48,6 +49,7 @@ export default function App() {
           <RiskGeographySection analytics={analytics.data} />
           <NewsContextSection selectedRoute={selectedRoute} />
           <ForecastSection />
+          <RouteLookupSection />
         </div>
       )}
     </DashboardShell>

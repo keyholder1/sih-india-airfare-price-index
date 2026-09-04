@@ -3,6 +3,7 @@ export * from "./routes";
 export * from "./dataQuality";
 export * from "./news";
 export * from "./forecast";
+export * from "./scrape";
 
 /**
  * Provenance of the airfare observations currently behind the numbers.

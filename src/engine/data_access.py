@@ -1,10 +1,13 @@
-"""Loads whatever real fare data this checkout actually has on disk, with
-an honestly-labeled synthetic fallback when it doesn't.
+"""Loads whatever real fare data this checkout actually has -- Postgres
+first (see db.py), a flat-file fallback second, and an honestly-labeled
+synthetic fallback when neither has anything.
 
 This is the seam between the API's Protocol adapters (real_adapters.py)
-and the project's actual data sources: the scraper's persisted
-validated/raw fare files (see scraper.storage's module docstring for the
-data/ layout) and, when none exist yet, a small deterministic demo
+and the project's actual data sources: Postgres (populated by the
+on-demand scrape pipeline and by migrate_flat_files_to_postgres.py), the
+legacy flat-file trees (see scraper.storage's module docstring for the
+data/ layout, kept as a resilience fallback, not a second source of
+truth), and, when neither has anything, a small deterministic demo
 dataset. Nothing here does statistics -- it only loads and labels data;
 index_engine/data_quality do the actual computation.
 """
@@ -19,6 +22,8 @@ import pandas as pd
 
 from index_engine import traffic as traffic_mod
 from index_engine import weighting as weighting_mod
+
+from . import db
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DGCA_TRAFFIC_CSV = str(REPO_ROOT / "data" / "traffic" / "dgca_domestic_city_pairs.csv")
@@ -109,12 +114,35 @@ def _generate_fallback_observations(n_months: int = 8) -> List[Dict[str, Any]]:
     return observations
 
 
+def _load_tree(tree: str, flat_file_dir: Path) -> List[Dict[str, Any]]:
+    """Postgres is now the source of truth (see src/engine/db.py) --
+    every write from the on-demand scrape pipeline (api/services/
+    scrape_job_service.py) and the flat-file migration
+    (migrate_flat_files_to_postgres.py) lands there. The flat-file
+    directory is kept as a fallback, not a second source of truth: it is
+    only consulted if the database is unreachable or unconfigured, so a
+    judge running this without DATABASE_URL set still sees whatever was
+    last committed to data/, never a crash. The two are never merged in
+    one response -- a caller gets one or the other, not a blend."""
+    if db.is_configured():
+        try:
+            observations = db.load_observations(tree)
+            if observations:
+                return observations
+        except Exception:
+            # Database configured but unreachable (e.g. the container
+            # isn't running) -- fall through to the flat-file tree rather
+            # than crash the whole dashboard over an infrastructure blip.
+            pass
+    return _read_jsonl_dir(flat_file_dir)
+
+
 def load_validated_observations() -> Tuple[List[Dict[str, Any]], str]:
     """Returns (observations, provenance) -- see ``classify_provenance``
     for the PROVENANCE_* values. Falls back to a synthetic demo dataset
     (PROVENANCE_SYNTHETIC) when nothing has been scraped and validated
-    yet."""
-    observations = _read_jsonl_dir(REPO_ROOT / "data" / "validated" / "fares")
+    yet, in Postgres or on disk."""
+    observations = _load_tree(db.TREE_VALIDATED, REPO_ROOT / "data" / "validated" / "fares")
     if not observations:
         return _generate_fallback_observations(), PROVENANCE_SYNTHETIC
     return observations, classify_provenance(observations)
@@ -124,7 +152,7 @@ def load_raw_observations() -> Tuple[List[Dict[str, Any]], str]:
     """Same as :func:`load_validated_observations` but from the raw
     (pre-data_quality) tree -- used by the quality endpoint, which needs
     to see what was rejected/flagged, not just what survived."""
-    observations = _read_jsonl_dir(REPO_ROOT / "data" / "raw" / "fares")
+    observations = _load_tree(db.TREE_RAW, REPO_ROOT / "data" / "raw" / "fares")
     if not observations:
         return _generate_fallback_observations(), PROVENANCE_SYNTHETIC
     return observations, classify_provenance(observations)

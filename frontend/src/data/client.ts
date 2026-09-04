@@ -17,6 +17,7 @@ import type {
   IndexTimeseriesPoint,
   RecommendedRoutesFile,
   RouteContext,
+  ScrapeJob,
 } from "../types";
 
 import analyticsFixture from "./fixtures/analytics.json";
@@ -34,6 +35,17 @@ async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, { headers });
   if (!res.ok) {
     throw new Error(`API ${path} responded ${res.status} ${res.statusText}`);
+  }
+  return (await res.json()) as T;
+}
+
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const headers: Record<string, string> = { Accept: "application/json", "Content-Type": "application/json" };
+  if (API_KEY) headers["X-API-Key"] = API_KEY;
+  const res = await fetch(`${API_BASE_URL}${path}`, { method: "POST", headers, body: JSON.stringify(body) });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail ?? `API ${path} responded ${res.status} ${res.statusText}`);
   }
   return (await res.json()) as T;
 }
@@ -169,4 +181,23 @@ export async function getDataStatus(): Promise<DataStatus> {
         asOf,
       };
   }
+}
+
+/**
+ * On-demand two-route pipeline: a real, live SerpApi call (api/routes/
+ * scrape.py), not a simulation, and not available in mock mode -- there
+ * is nothing to fake here without misrepresenting a real network call
+ * that didn't happen.
+ */
+export function createScrapeJob(origin: string, destination: string): Promise<{ job_id: string }> {
+  if (DATA_MODE !== "api") {
+    return Promise.reject(
+      new Error("On-demand route lookup needs a real backend (VITE_DATA_MODE=api) -- there's no mock version of a live SerpApi call.")
+    );
+  }
+  return apiPost<{ job_id: string }>("/api/v1/scrape/jobs", { origin, destination });
+}
+
+export function getScrapeJob(jobId: string): Promise<ScrapeJob> {
+  return apiGet<ScrapeJob>(`/api/v1/scrape/jobs/${jobId}`);
 }

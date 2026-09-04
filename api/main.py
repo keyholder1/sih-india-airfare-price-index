@@ -21,10 +21,18 @@ from api.routes import (
     analytics_router,
     dashboard_router,
 )
+from api.routes.scrape import router as scrape_router
 from api.forecasting_routes import router as forecasting_router
+from src.engine import db
 
 # Load .env file if present
 load_dotenv()
+
+# Idempotent: creates tables if they don't exist yet. A no-op (silently
+# skipped, not fatal to app startup) if DATABASE_URL isn't set -- see
+# db.is_configured() / data_access.py's flat-file fallback.
+if db.is_configured():
+    db.init_schema()
 
 app = FastAPI(
     title="India Airfare Price Index API",
@@ -77,5 +85,8 @@ v1_router.include_router(dashboard_router)
 # Forecasting endpoints (national/route forecasts, baseline evaluation,
 # CPI benchmark, booking-horizon analysis) -- see api/forecasting_routes.py.
 v1_router.include_router(forecasting_router)
+# On-demand two-route scrape -> validate -> index pipeline, backed by
+# Postgres -- see api/services/scrape_job_service.py.
+v1_router.include_router(scrape_router)
 
 app.include_router(v1_router)
