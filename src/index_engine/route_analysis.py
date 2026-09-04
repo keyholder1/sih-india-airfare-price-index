@@ -21,8 +21,20 @@ from typing import Dict, List, Literal, Optional
 
 import pandas as pd
 
+from .city_mapping import IATA_TO_CITY
 from .geo_metadata import CITY_COORDINATES
 from .models import IndexResult, RouteContribution
+
+
+def _display_city(iata_code: str) -> Optional[str]:
+    """Title-cased city name for display, straight from the same
+    controlled IATA_TO_CITY mapping the on-demand pipeline's own
+    RouteSpec.origin_city uses (api/services/scrape_job_service.py) --
+    live for any known airport, not contingent on a route being in the
+    separate, static recommended_routes.json candidate list. None (never
+    guessed) for a code with no verified mapping."""
+    city = IATA_TO_CITY.get(iata_code.upper())
+    return city.title() if city else None
 
 
 @dataclass
@@ -38,6 +50,8 @@ class RouteInflationRow:
     contribution: Optional[float]
     volatility: Optional[float]
     status: str
+    origin_city: Optional[str] = None
+    destination_city: Optional[str] = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -85,6 +99,8 @@ def build_route_inflation_table(
                 contribution=contrib.contribution_points if contrib else None,
                 volatility=volatility_by_route.get(cur.route),
                 status=cur.status,
+                origin_city=_display_city(cur.origin),
+                destination_city=_display_city(cur.destination),
             )
         )
     return rows

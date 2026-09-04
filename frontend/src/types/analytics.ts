@@ -124,6 +124,12 @@ export interface RouteInflationRow {
   contribution: number | null;
   volatility: number | null;
   status: RouteStatus;
+  /** Live from index_engine.city_mapping.IATA_TO_CITY -- populated for any
+   *  known airport, not contingent on the route being in the separate,
+   *  static recommended_routes.json candidate list. Title-cased (e.g.
+   *  "Bengaluru"); null for an airport with no verified city mapping. */
+  origin_city: string | null;
+  destination_city: string | null;
 }
 
 export type RankingKey =

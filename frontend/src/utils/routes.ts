@@ -1,8 +1,13 @@
 /**
  * Assembles one flat per-route record from the engine's several output
  * arrays (`route_inflation`, `route_indices`, `route_contributions`,
- * `volatility.route_volatility`, `route_map_objects`) plus optional city
- * names from `recommended_routes.json`.
+ * `volatility.route_volatility`, `route_map_objects`). City names come
+ * live from `route_inflation`'s own `origin_city`/`destination_city`
+ * (any known airport), falling back to the separate, static
+ * `recommended_routes.json` candidate list only when the live field has
+ * no mapping. Tier/priority still come from `recommended_routes.json`
+ * only -- those are inherently about the curated candidate list, not a
+ * live property of a route.
  *
  * Pure joining + light label formatting. Every metric is an engine value;
  * nothing is (re)computed here.
@@ -95,8 +100,12 @@ export function buildRouteDetails(
       route: infl.route,
       origin: infl.origin,
       destination: infl.destination,
-      originCity: rec ? titleCase(rec.origin_city) : null,
-      destinationCity: rec ? titleCase(rec.destination_city) : null,
+      // Prefer the engine's own live IATA_TO_CITY lookup (covers any known
+      // airport, not just routes in the static recommended_routes.json
+      // candidate list) -- fall back to the recommended file only for a
+      // route the live field has no verified mapping for.
+      originCity: infl.origin_city ?? (rec ? titleCase(rec.origin_city) : null),
+      destinationCity: infl.destination_city ?? (rec ? titleCase(rec.destination_city) : null),
 
       currentIndex: infl.current_index,
       previousIndex: contrib?.route_index_previous ?? null,
