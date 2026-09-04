@@ -149,7 +149,21 @@ export function RouteNetworkMap({
                   className="cursor-pointer"
                   onMouseEnter={() => setHovered(arc.route)}
                   onMouseLeave={() => setHovered(null)}
-                  onClick={() => onRouteSelect(isSelected ? null : arc.route)}
+                  onClick={() => {
+                    // A click must win over whatever's stale in `hovered`
+                    // -- routes converge tightly near hub cities (DEL
+                    // especially), so the cursor can easily still be
+                    // resting over a neighbouring arc's hit-path from a
+                    // moment earlier. Without this, the tooltip (which
+                    // prefers `hovered` over `selectedRoute` so you can
+                    // preview other routes without losing the selection)
+                    // can keep showing that stale route instead of the
+                    // one just clicked, even though selection itself was
+                    // already correct.
+                    const next = isSelected ? null : arc.route;
+                    onRouteSelect(next);
+                    setHovered(next);
+                  }}
                 />
                 {/* soft light halo keeps every arc legible on the land fill */}
                 <path
