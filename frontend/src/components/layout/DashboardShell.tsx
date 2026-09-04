@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { DataStatus } from "../../types";
 import { DataStatusBadge } from "./DataStatusBadge";
+import { AuthControl } from "./AuthControl";
 
 interface DashboardShellProps {
   status: DataStatus | null;
@@ -20,7 +21,10 @@ export function DashboardShell({ status, children }: DashboardShellProps) {
               India · experimental CPI-augmentation prototype
             </span>
           </div>
-          {status && <DataStatusBadge status={status} size="sm" />}
+          <div className="flex items-center gap-3">
+            {status && <DataStatusBadge status={status} size="sm" />}
+            <AuthControl />
+          </div>
         </div>
       </header>
 
