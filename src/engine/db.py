@@ -120,6 +120,13 @@ CREATE TABLE IF NOT EXISTS scrape_jobs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Additive, idempotent column additions rather than a migration script --
+-- safe to run against both a fresh database and one created before the
+-- poll-driven step executor existed. `step` tracks how far the on-demand
+-- pipeline has gotten; `pending_dates` is the job's booking-horizon date
+-- list, frozen at creation time (see scrape_job_service.py).
+ALTER TABLE scrape_jobs ADD COLUMN IF NOT EXISTS step INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE scrape_jobs ADD COLUMN IF NOT EXISTS pending_dates JSONB;
 
 CREATE TABLE IF NOT EXISTS news_article_cache (
     cache_key TEXT PRIMARY KEY,
@@ -156,6 +163,24 @@ def load_observations(tree: str) -> List[Dict[str, Any]]:
     with _connect() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("SELECT record, is_mock FROM fare_observations WHERE tree = %s", (tree,))
+            rows = cur.fetchall()
+    return [_row_to_record(r) for r in rows]
+
+
+def get_observations_for_run(run_id: str, tree: str) -> List[Dict[str, Any]]:
+    """All observations for one specific run (not every run, unlike
+    ``load_observations``) -- used by the on-demand pipeline's deferred
+    validation step to gather every booking-horizon date's raw rows,
+    inserted incrementally one poll step at a time, before running
+    ``data_quality.validate_fare_batch`` over the complete set."""
+    if tree not in (TREE_RAW, TREE_VALIDATED):
+        raise ValueError(f"Unknown tree {tree!r}; must be {TREE_RAW!r} or {TREE_VALIDATED!r}")
+    with _connect() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT record, is_mock FROM fare_observations WHERE tree = %s AND run_id = %s",
+                (tree, run_id),
+            )
             rows = cur.fetchall()
     return [_row_to_record(r) for r in rows]
 
@@ -303,16 +328,56 @@ def set_cached_news(cache_key: str, articles: List[Dict[str, Any]]) -> None:
 # --- On-demand scrape jobs --------------------------------------------------
 
 
-def create_job(origin: str, destination: str) -> str:
+def create_job(
+    origin: str,
+    destination: str,
+    pending_dates: Optional[List[Tuple[str, str]]] = None,
+) -> str:
+    """``pending_dates``: the job's booking-horizon (flight_date,
+    booking_date) ISO-string pairs, frozen at creation time so a later
+    poll step never recomputes them against a possibly-different
+    ``date.today()`` (see scrape_job_service.py)."""
     job_id = str(uuid.uuid4())
     with _connect() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO scrape_jobs (id, origin, destination, status, message) "
-                "VALUES (%s, %s, %s, %s, %s)",
-                (job_id, origin, destination, JOB_QUEUED, "Queued."),
+                "INSERT INTO scrape_jobs (id, origin, destination, status, step, pending_dates, message) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (
+                    job_id,
+                    origin,
+                    destination,
+                    JOB_QUEUED,
+                    0,
+                    json.dumps(pending_dates) if pending_dates is not None else None,
+                    "Queued.",
+                ),
             )
     return job_id
+
+
+def find_active_job(origin: str, destination: str) -> Optional[str]:
+    """Id of an existing non-terminal job for this exact route, if any.
+
+    Lets ``POST /scrape/jobs`` reuse an in-flight job instead of creating
+    a duplicate -- this is what serializes concurrent on-demand requests
+    for the same route now, replacing ``route_lock``'s old role. Unlike
+    a held session lock, this is just a plain read: a race between two
+    near-simultaneous requests is possible in principle, but each job's
+    ``run_id`` is unique and ``insert_observations`` is idempotent per
+    run, so the worst case is redundant SerpApi spend, not corrupted or
+    double-counted data -- an acceptable trade for a design that has to
+    work across independent, stateless serverless invocations.
+    """
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM scrape_jobs WHERE origin = %s AND destination = %s "
+                "AND status = ANY(%s) ORDER BY created_at DESC LIMIT 1",
+                (origin, destination, list(_NON_TERMINAL_STATUSES)),
+            )
+            row = cur.fetchone()
+    return str(row[0]) if row else None
 
 
 def update_job(
@@ -364,6 +429,49 @@ def get_job(job_id: str) -> Optional[Dict[str, Any]]:
     return out
 
 
+def get_job_step_state(job_id: str) -> Optional[Dict[str, Any]]:
+    """Internal fields needed to advance a job one step -- separate from
+    ``get_job()``'s public, API-response-facing shape."""
+    with _connect() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT origin, destination, status, step, pending_dates "
+                "FROM scrape_jobs WHERE id = %s",
+                (job_id,),
+            )
+            row = cur.fetchone()
+    return dict(row) if row is not None else None
+
+
+def advance_job(
+    job_id: str,
+    step: int,
+    status: str,
+    message: Optional[str] = None,
+    result: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None,
+) -> None:
+    """Same as ``update_job``, plus moving the step counter forward --
+    call this only after a step has actually completed successfully,
+    never from an exception handler (a failed step must not advance, so
+    the next poll retries the same step)."""
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE scrape_jobs
+                SET status = %s,
+                    step = %s,
+                    message = COALESCE(%s, message),
+                    result = COALESCE(%s, result),
+                    error = COALESCE(%s, error),
+                    updated_at = now()
+                WHERE id = %s
+                """,
+                (status, step, message, json.dumps(result, default=str) if result is not None else None, error, job_id),
+            )
+
+
 def _advisory_lock_key(origin: str, destination: str) -> int:
     """Deterministic signed-64-bit key for pg_advisory_lock -- stable
     across processes/restarts (unlike Python's salted str hash())."""
@@ -389,6 +497,14 @@ def route_lock(origin: str, destination: str) -> Iterator[None]:
     section -- advisory locks are connection-scoped, so the caller must
     do its work inside this ``with`` block, not across separate
     short-lived ``_connect()`` calls.
+
+    Not used by the on-demand scrape pipeline (scrape_job_service.py)
+    any more: a session-scoped lock held open across the caller's whole
+    critical section cannot survive independent serverless invocations
+    (Vercel tears the process down once the HTTP response is sent), so
+    that path now uses ``find_active_job``'s plain-read check instead.
+    Left here for any future caller that genuinely runs as one
+    long-lived process and needs a real cross-request mutex.
     """
     url = database_url()
     if not url:
@@ -415,18 +531,22 @@ def route_lock(origin: str, destination: str) -> Iterator[None]:
 _NON_TERMINAL_STATUSES = (JOB_QUEUED, JOB_SCRAPING, JOB_VALIDATING, JOB_INDEXING)
 
 
-def fail_orphaned_jobs() -> int:
-    """Marks every job still in a non-terminal status as failed.
+STALE_JOB_MINUTES = 30
 
-    Call once at app startup. A job's pipeline runs as an in-process
-    asyncio task (scrape_job_service._run_job) -- if the server process
-    restarts while one is in flight, that task simply stops existing,
-    but its row stays stuck at whatever status it last reached forever,
-    and the frontend polls a job that can now never resolve. This
-    can't distinguish "genuinely still running in another live process"
-    from "orphaned by a restart" (there's only ever one server process
-    for this prototype), so it's safe to call unconditionally on
-    startup. Returns the number of jobs marked failed.
+
+def fail_orphaned_jobs() -> int:
+    """Marks non-terminal jobs that haven't been advanced in a while as
+    failed.
+
+    Under the poll-driven step executor, a job's entire state lives in
+    its row between every step -- there's no in-process background task
+    to lose, so "orphaned" no longer means "the server restarted."
+    It now means: nobody has polled this job in ``STALE_JOB_MINUTES``,
+    most likely because the viewer closed the tab. Safe to call
+    opportunistically (e.g. on cold start) rather than needing "once at
+    startup" semantics, since a genuinely-active job's ``updated_at``
+    keeps advancing every poll and is never touched by this. Returns the
+    number of jobs marked failed.
     """
     with _connect() as conn:
         with conn.cursor() as cur:
@@ -434,11 +554,11 @@ def fail_orphaned_jobs() -> int:
                 """
                 UPDATE scrape_jobs
                 SET status = %s,
-                    error = COALESCE(error, 'Orphaned: the server restarted while this job was in progress.'),
+                    error = COALESCE(error, 'Abandoned: no poll advanced this job for over 30 minutes.'),
                     updated_at = now()
-                WHERE status = ANY(%s)
+                WHERE status = ANY(%s) AND updated_at < now() - (%s || ' minutes')::interval
                 """,
-                (JOB_FAILED, list(_NON_TERMINAL_STATUSES)),
+                (JOB_FAILED, list(_NON_TERMINAL_STATUSES), STALE_JOB_MINUTES),
             )
             return cur.rowcount
 

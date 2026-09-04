@@ -1,7 +1,10 @@
-"""On-demand two-route scrape endpoints: create a background job, poll it.
+"""On-demand two-route scrape endpoints: create a job, then poll it.
 
-See api/services/scrape_job_service.py for the full pipeline this wraps
-(real SerpApi call -> Data Quality -> Postgres -> re-run AirfareAnalytics).
+Each poll does real work: GET /scrape/jobs/{id} executes exactly the next
+bounded step of the pipeline (one booking-horizon date's SerpApi call, a
+validation pass, or the final recompute) and returns the updated status --
+see api/services/scrape_job_service.py's module docstring for why nothing
+runs in a background task.
 """
 
 from __future__ import annotations
@@ -47,11 +50,12 @@ class ScrapeJobResponse(BaseModel):
     },
 )
 async def create_scrape_job(request: CreateScrapeJobRequest) -> CreateScrapeJobResponse:
-    """Kicks off the real scrape -> validate -> index pipeline in the
-    background and returns immediately with a job id. This is a genuine
-    live call to SerpApi/Google Flights -- it takes real time (roughly
-    30s-2min for one route pair across all booking-horizon buckets) and
-    consumes real API quota. Poll GET /scrape/jobs/{job_id} for progress.
+    """Creates the job row and returns immediately with a job id -- no
+    scraping happens yet. This is a genuine live pipeline against
+    SerpApi/Google Flights, spread across the poll calls that follow
+    (roughly 30s-2min total for one route pair across all
+    booking-horizon buckets) and consuming real API quota. Poll
+    GET /scrape/jobs/{job_id} to both check progress and advance it.
     """
     try:
         job_id = await scrape_job_service.start_job(request.origin, request.destination)
@@ -65,7 +69,7 @@ async def create_scrape_job(request: CreateScrapeJobRequest) -> CreateScrapeJobR
 @router.get(
     "/jobs/{job_id}",
     response_model=ScrapeJobResponse,
-    summary="Poll the status of a scrape job",
+    summary="Poll a scrape job -- and advance it one step",
     responses={404: {"description": "Unknown job id."}},
 )
 def get_scrape_job(job_id: str) -> ScrapeJobResponse:
@@ -74,4 +78,12 @@ def get_scrape_job(job_id: str) -> ScrapeJobResponse:
     job = db.get_job(job_id)
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No job with id {job_id!r}.")
+
+    if job["status"] not in (db.JOB_DONE, db.JOB_FAILED):
+        # This poll IS the work: it executes exactly the next bounded
+        # step (one SerpApi call, a validation pass, or the final
+        # recompute) before returning the freshly-updated status.
+        scrape_job_service.advance_job(job_id)
+        job = db.get_job(job_id)
+
     return ScrapeJobResponse(**job)
