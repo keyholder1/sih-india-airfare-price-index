@@ -29,20 +29,54 @@ function delay<T>(value: T): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), MOCK_LATENCY_MS));
 }
 
-async function apiGet<T>(path: string): Promise<T> {
+/** Default per-request timeout. Without this, a `fetch` with no
+ *  AbortController has no timeout of its own -- a stalled connection
+ *  (bad network, or the backend hanging) would leave a caller waiting
+ *  indefinitely with no error and no way to recover. Matters most for
+ *  Section 8's job-status polling, where an indefinitely-hung request
+ *  would freeze the whole poll loop (see useScrapeJob.ts's retry logic,
+ *  which depends on a request eventually failing rather than hanging). */
+const DEFAULT_TIMEOUT_MS = 20_000;
+
+function withTimeout(ms: number): AbortSignal {
+  return AbortSignal.timeout(ms);
+}
+
+async function apiGet<T>(path: string, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (API_KEY) headers["X-API-Key"] = API_KEY;
-  const res = await fetch(`${API_BASE_URL}${path}`, { headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, { headers, signal: withTimeout(timeoutMs) });
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      throw new Error(`API ${path} timed out after ${timeoutMs / 1000}s.`);
+    }
+    throw err;
+  }
   if (!res.ok) {
     throw new Error(`API ${path} responded ${res.status} ${res.statusText}`);
   }
   return (await res.json()) as T;
 }
 
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
+async function apiPost<T>(path: string, body: unknown, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json", "Content-Type": "application/json" };
   if (API_KEY) headers["X-API-Key"] = API_KEY;
-  const res = await fetch(`${API_BASE_URL}${path}`, { method: "POST", headers, body: JSON.stringify(body) });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: withTimeout(timeoutMs),
+    });
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      throw new Error(`API ${path} timed out after ${timeoutMs / 1000}s.`);
+    }
+    throw err;
+  }
   if (!res.ok) {
     const detail = await res.json().catch(() => null);
     throw new Error(detail?.detail ?? `API ${path} responded ${res.status} ${res.statusText}`);

@@ -21,6 +21,7 @@ demo, never a crash.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import uuid
@@ -52,6 +53,14 @@ def is_configured() -> bool:
     return bool(database_url())
 
 
+#: Bounds how long a call can hang trying to reach an unresponsive/
+#: unreachable Postgres (e.g. a firewall silently dropping packets,
+#: rather than refusing the connection outright, which fails fast on its
+#: own) -- without this, psycopg2.connect has no timeout at all and a
+#: request could hang far longer than any caller-facing HTTP timeout.
+CONNECT_TIMEOUT_SECONDS = 10
+
+
 @contextmanager
 def _connect():
     url = database_url()
@@ -60,7 +69,7 @@ def _connect():
             f"{ENV_DATABASE_URL} is not set -- see .env.example. "
             "Callers should check db.is_configured() before calling into this module."
         )
-    conn = psycopg2.connect(url)
+    conn = psycopg2.connect(url, connect_timeout=CONNECT_TIMEOUT_SECONDS)
     try:
         yield conn
         conn.commit()
@@ -353,3 +362,100 @@ def get_job(job_id: str) -> Optional[Dict[str, Any]]:
     out["created_at"] = out["created_at"].isoformat()
     out["updated_at"] = out["updated_at"].isoformat()
     return out
+
+
+def _advisory_lock_key(origin: str, destination: str) -> int:
+    """Deterministic signed-64-bit key for pg_advisory_lock -- stable
+    across processes/restarts (unlike Python's salted str hash())."""
+    digest = hashlib.sha256(f"{origin}-{destination}".encode()).digest()
+    return int.from_bytes(digest[:8], "big", signed=True)
+
+
+@contextmanager
+def route_lock(origin: str, destination: str) -> Iterator[None]:
+    """Postgres session-level advisory lock scoped to one route pair.
+
+    Serializes concurrent on-demand pipeline runs for the SAME route:
+    without this, two near-simultaneous requests for a brand-new route
+    could both pass the "no existing data yet" check before either had
+    inserted anything, both spend real SerpApi quota, and both insert
+    observations under different run_ids that never get cross-run
+    deduplicated (see scrape_job_service.py). A second caller blocks
+    here until the first finishes; by then the route has data, so the
+    second caller's own existing-data check takes the cheap cache-reuse
+    path instead of scraping again.
+
+    Held on one dedicated connection for the caller's entire critical
+    section -- advisory locks are connection-scoped, so the caller must
+    do its work inside this ``with`` block, not across separate
+    short-lived ``_connect()`` calls.
+    """
+    url = database_url()
+    if not url:
+        raise RuntimeError(
+            f"{ENV_DATABASE_URL} is not set -- see .env.example. "
+            "Callers should check db.is_configured() before calling into this module."
+        )
+    conn = psycopg2.connect(url, connect_timeout=CONNECT_TIMEOUT_SECONDS)
+    key = _advisory_lock_key(origin, destination)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT pg_advisory_lock(%s)", (key,))
+        conn.commit()
+        yield
+    finally:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT pg_advisory_unlock(%s)", (key,))
+            conn.commit()
+        finally:
+            conn.close()
+
+
+_NON_TERMINAL_STATUSES = (JOB_QUEUED, JOB_SCRAPING, JOB_VALIDATING, JOB_INDEXING)
+
+
+def fail_orphaned_jobs() -> int:
+    """Marks every job still in a non-terminal status as failed.
+
+    Call once at app startup. A job's pipeline runs as an in-process
+    asyncio task (scrape_job_service._run_job) -- if the server process
+    restarts while one is in flight, that task simply stops existing,
+    but its row stays stuck at whatever status it last reached forever,
+    and the frontend polls a job that can now never resolve. This
+    can't distinguish "genuinely still running in another live process"
+    from "orphaned by a restart" (there's only ever one server process
+    for this prototype), so it's safe to call unconditionally on
+    startup. Returns the number of jobs marked failed.
+    """
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE scrape_jobs
+                SET status = %s,
+                    error = COALESCE(error, 'Orphaned: the server restarted while this job was in progress.'),
+                    updated_at = now()
+                WHERE status = ANY(%s)
+                """,
+                (JOB_FAILED, list(_NON_TERMINAL_STATUSES)),
+            )
+            return cur.rowcount
+
+
+def prune_old_jobs(older_than_days: int = 7) -> int:
+    """Deletes terminal (done/failed) job rows older than the given
+    window. Call opportunistically (e.g. at startup) so scrape_jobs
+    doesn't grow without bound -- a job's own persisted effect (fare
+    observations, scraper_runs) lives in its own tables and is
+    untouched by this. Returns the number of rows deleted."""
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM scrape_jobs
+                WHERE status IN (%s, %s) AND updated_at < now() - (%s || ' days')::interval
+                """,
+                (JOB_DONE, JOB_FAILED, older_than_days),
+            )
+            return cur.rowcount

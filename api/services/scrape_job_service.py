@@ -87,7 +87,23 @@ async def start_job(origin: str, destination: str) -> str:
 
 async def _run_job(job_id: str, origin: str, destination: str) -> None:
     try:
-        existing_count = await asyncio.to_thread(db.count_observations_for_route, origin, destination, db.TREE_VALIDATED)
+        # The whole pipeline runs synchronously in one background thread,
+        # holding a Postgres advisory lock scoped to this route pair for
+        # its entire duration (db.route_lock) -- serializes concurrent
+        # on-demand runs for the SAME route so two near-simultaneous
+        # requests can't both pass the "no existing data yet" check and
+        # both spend real SerpApi quota / insert un-deduplicated
+        # observations. A second caller queued behind the lock finds the
+        # first caller's data already there once it's their turn, and
+        # takes the cheap cache-reuse path instead.
+        await asyncio.to_thread(_run_job_body, job_id, origin, destination)
+    except Exception as exc:  # noqa: BLE001 -- a job must never crash the server; report it instead
+        db.update_job(job_id, db.JOB_FAILED, message="Failed.", error=f"{type(exc).__name__}: {exc}")
+
+
+def _run_job_body(job_id: str, origin: str, destination: str) -> None:
+    with db.route_lock(origin, destination):
+        existing_count = db.count_observations_for_route(origin, destination, db.TREE_VALIDATED)
 
         if existing_count > 0:
             # Already have real, previously-collected data for this exact
@@ -102,12 +118,12 @@ async def _run_job(job_id: str, origin: str, destination: str) -> None:
                 db.JOB_INDEXING,
                 message=f"{existing_count} previously-recorded real observation(s) already exist for {origin}-{destination}. Reusing them instead of a fresh SerpApi call...",
             )
-            result = await asyncio.to_thread(_recompute_and_summarize, origin, destination, from_cache=True)
+            result = _recompute_and_summarize(origin, destination, from_cache=True)
             db.update_job(job_id, db.JOB_DONE, message="Done (used previously-recorded data).", result=result)
             return
 
         db.update_job(job_id, db.JOB_SCRAPING, message=f"No prior data for {origin}-{destination} -- calling SerpApi live across all booking-horizon windows...")
-        raw_observations, report = await asyncio.to_thread(_scrape, origin, destination)
+        raw_observations, report = _scrape(origin, destination)
 
         if not raw_observations:
             db.update_job(
@@ -135,11 +151,9 @@ async def _run_job(job_id: str, origin: str, destination: str) -> None:
             db.JOB_INDEXING,
             message="Persisted to Postgres. Recomputing the national index against the updated dataset...",
         )
-        result = await asyncio.to_thread(_recompute_and_summarize, origin, destination, from_cache=False, quality_result=quality_result)
+        result = _recompute_and_summarize(origin, destination, from_cache=False, quality_result=quality_result)
 
         db.update_job(job_id, db.JOB_DONE, message="Done.", result=result)
-    except Exception as exc:  # noqa: BLE001 -- a job must never crash the server; report it instead
-        db.update_job(job_id, db.JOB_FAILED, message="Failed.", error=f"{type(exc).__name__}: {exc}")
 
 
 def _scrape(origin: str, destination: str):

@@ -33,6 +33,12 @@ load_dotenv()
 # db.is_configured() / data_access.py's flat-file fallback.
 if db.is_configured():
     db.init_schema()
+    # A scrape job's pipeline runs as an in-process asyncio task -- any
+    # job still non-terminal at startup was orphaned by the previous
+    # process exiting mid-run and can never resolve on its own; fail it
+    # explicitly so the frontend's poll loop doesn't wait on it forever.
+    db.fail_orphaned_jobs()
+    db.prune_old_jobs()
 
 app = FastAPI(
     title="India Airfare Price Index API",

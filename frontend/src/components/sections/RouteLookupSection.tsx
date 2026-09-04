@@ -26,13 +26,19 @@ function stepIndex(status: string): number {
 export function RouteLookupSection({ onComplete }: { onComplete?: () => void }) {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
-  const { job, error, isRunning, start, reset } = useScrapeJob();
+  const [formError, setFormError] = useState<string | null>(null);
+  const { job, error, retrying, isRunning, start, reset } = useScrapeJob();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const o = origin.trim().toUpperCase();
     const d = destination.trim().toUpperCase();
     if (o.length !== 3 || d.length !== 3) return;
+    if (o === d) {
+      setFormError("Origin and destination must be different routes.");
+      return;
+    }
+    setFormError(null);
     start(o, d);
   }
 
@@ -100,19 +106,29 @@ export function RouteLookupSection({ onComplete }: { onComplete?: () => void }) 
           >
             {isRunning ? "Running…" : "Run pipeline"}
           </button>
-          {job && !isRunning && (
+          {job && (
             <button
               type="button"
               onClick={reset}
               className="rounded-md px-3 py-1.5 text-sm font-medium text-ink-faint transition-colors hover:bg-surface-sunken hover:text-ink"
             >
-              Clear
+              {isRunning ? "Cancel" : "Clear"}
             </button>
           )}
         </form>
 
+        {formError && (
+          <p className="mt-4 rounded-md border border-rise/30 bg-rise-wash px-3 py-2 text-sm text-rise">{formError}</p>
+        )}
+
         {error && (
           <p className="mt-4 rounded-md border border-rise/30 bg-rise-wash px-3 py-2 text-sm text-rise">{error}</p>
+        )}
+
+        {retrying && !error && (
+          <p className="mt-4 rounded-md border border-synth-border bg-synth-wash px-3 py-2 text-sm text-synth">
+            Connection hiccup -- retrying...
+          </p>
         )}
 
         {job && (
