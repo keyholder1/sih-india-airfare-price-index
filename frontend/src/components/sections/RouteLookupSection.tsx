@@ -145,6 +145,15 @@ export function RouteLookupSection({
           </p>
         )}
 
+        {isRunning && !job && (
+          <div className="mt-4 flex items-center gap-2.5 rounded-md border border-hairline bg-surface-sunken px-3 py-2 text-sm text-ink-muted">
+            <span className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+            Starting the pipeline -- the backend can take several seconds to
+            wake up on a cold start, then it works through the route one
+            real step at a time.
+          </div>
+        )}
+
         {job && (
           <div className="mt-5 border-t border-hairline pt-4">
             <div className="flex flex-wrap items-center gap-2">

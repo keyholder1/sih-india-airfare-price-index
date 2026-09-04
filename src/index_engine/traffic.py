@@ -226,7 +226,22 @@ def build_dgca_weights(
     route_passengers = aggregate_period(long_df, start_period, end_period)
     national = national_weights(route_passengers)
 
-    covered_city_routes = [(iata_to_city(o), iata_to_city(d)) for o, d in covered_iata_routes]
+    # A route with no verified IATA<->city mapping (e.g. a code a user
+    # typed into the on-demand pipeline that isn't in the curated
+    # city_mapping table yet) must not take down weighting for every
+    # OTHER route -- it degrades on its own (no DGCA weight, same as any
+    # route DGCA has no traffic data for), not the whole batch. Previously
+    # a single unmapped code raised here and the caller's blanket
+    # except-Exception fallback silently replaced every route's real
+    # weight with synthetic equal-weighting.
+    covered_city_routes = []
+    skipped_unmapped_routes: List[str] = []
+    for o, d in covered_iata_routes:
+        try:
+            covered_city_routes.append((iata_to_city(o), iata_to_city(d)))
+        except KeyError:
+            skipped_unmapped_routes.append(f"{o}-{d}")
+
     covered = covered_subset(national, covered_city_routes)
     coverage = traffic_weight_coverage(covered)
 
@@ -242,5 +257,6 @@ def build_dgca_weights(
         "records_received": int(len(raw)),
         "records_rejected": int(len(rejected)),
         "rejection_reasons": rejected["rejection_reason"].value_counts().to_dict() if len(rejected) else {},
+        "skipped_unmapped_routes": skipped_unmapped_routes,
     }
     return engine_weights, diagnostics

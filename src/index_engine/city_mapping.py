@@ -8,11 +8,14 @@ data/traffic/dgca_domestic_city_pairs.csv (checked 2026-08-31) — see the
 comment on each entry.
 
 Deliberately excluded rather than merged:
-    "MUMBAI (MUMBAI)"       - a separate, much smaller entry (336 rows)
-                              alongside the dominant "MUMBAI" (7,351 rows);
-                              merging them would silently double-count.
-    "MUMBAI (NAVI MUMBAI)"  - a genuinely different airport (Navi Mumbai
-                              International), not Mumbai/BOM.
+    "MUMBAI (MUMBAI)"          - a separate, much smaller entry (336 rows)
+                                 alongside the dominant "MUMBAI" (7,351 rows);
+                                 merging them would silently double-count.
+    "MUMBAI (NAVI MUMBAI)"     - a genuinely different airport (Navi Mumbai
+                                 International), not Mumbai/BOM.
+    "MANGALORE (MANGALURU)"    - a separate, much smaller entry (35 rows)
+                                 alongside the dominant "MANGALORE" (1,026
+                                 rows); same double-counting risk as Mumbai.
 
 Add new entries here (and verify the exact string against the CSV) rather
 than guessing — an unmapped city silently drops that route's DGCA weight
@@ -54,6 +57,7 @@ IATA_TO_CITY: Dict[str, str] = {
     "IXL": "LEH",
     "GOI": "DABOLIM",  # DGCA lists Goa's airport by its old name "DABOLIM"
     "TRV": "TRIVANDRUM",  # DGCA lists Thiruvananthapuram by its old name "TRIVANDRUM"
+    "IXE": "MANGALORE",  # DGCA lists Mangaluru by its old name "MANGALORE"
 }
 
 CITY_TO_IATA: Dict[str, str] = {city: iata for iata, city in IATA_TO_CITY.items()}
