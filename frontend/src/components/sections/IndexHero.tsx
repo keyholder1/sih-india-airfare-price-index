@@ -2,6 +2,7 @@ import type { PriceIndex } from "../../types";
 import { Panel } from "../primitives/Panel";
 import { StatValue } from "../primitives/StatValue";
 import { DeltaPill } from "../primitives/DeltaPill";
+import { InfoHint } from "../primitives/InfoHint";
 import {
   formatFractionPct,
   formatIndex,
@@ -39,18 +40,30 @@ export function IndexHero({ priceIndex: pi, trafficWeightCoverage }: IndexHeroPr
         <p className="eyebrow">National Airfare Price Index</p>
         <div className="mt-3 flex items-end gap-4">
           <StatValue value={pi.national_index} format={(v) => formatIndex(v)} size="hero" />
-          <span className="pb-2 text-sm text-ink-faint">
+          <span className="flex items-center gap-1 pb-2 text-sm text-ink-faint">
             {formatPeriod(pi.base_period)} = 100
+            <InfoHint
+              align="left"
+              text={`The "base period" is fixed at ${formatPeriod(
+                pi.base_period
+              )} and pinned to 100 -- every other month's index is that month's average fare relative to this one. 122 means "22% more expensive than the base period," not a rupee amount.`}
+            />
           </span>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2.5">
-          <DeltaPill value={pi.mom_change_pct} label="MoM" />
-          <DeltaPill
-            value={pi.yoy_change_pct}
-            label="YoY"
-            nullText="n/a · needs 12 mo"
-          />
+          <span className="inline-flex items-center gap-1">
+            <DeltaPill value={pi.mom_change_pct} label="MoM" />
+            <InfoHint text="Month-over-month: how much the national index changed vs. the immediately previous month." />
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <DeltaPill
+              value={pi.yoy_change_pct}
+              label="YoY"
+              nullText="n/a · needs 12 mo"
+            />
+            <InfoHint text="Year-over-year: how much the index changed vs. the same month last year. Needs 12 months of history to compute -- shown honestly as unavailable, not zero, until then." />
+          </span>
           <span className="text-xs text-ink-faint">
             vs. {formatPeriod(pi.current_period)}
           </span>

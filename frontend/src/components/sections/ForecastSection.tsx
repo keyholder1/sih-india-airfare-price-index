@@ -2,6 +2,7 @@ import { useForecast } from "../../hooks/useForecast";
 import { SectionHeader } from "../layout/SectionHeader";
 import { Panel } from "../primitives/Panel";
 import { StatValue } from "../primitives/StatValue";
+import { InfoHint } from "../primitives/InfoHint";
 import { formatIndex, formatPeriod, formatSignedPct } from "../../utils/format";
 
 /** One-period-ahead national forecast (naive baseline) and a comparison
@@ -24,7 +25,13 @@ export function ForecastSection({ refreshKey = 0 }: { refreshKey?: unknown }) {
       {forecast.data && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <Panel className="p-5">
-            <p className="eyebrow">National forecast</p>
+            <p className="eyebrow flex items-center gap-1">
+              National forecast
+              <InfoHint
+                align="left"
+                text="A “naive” baseline forecast just carries the last real computed index forward -- deliberately simple, chosen as an honest floor any fancier model (ARIMA, ML) would need to beat before it's worth trusting over this. Not a sales pitch, and not economic modelling."
+              />
+            </p>
             {forecast.data.national_forecast.status !== "OK" ? (
               <p className="mt-3 text-sm text-ink-faint">
                 {forecast.data.national_forecast.notes ?? `Status: ${forecast.data.national_forecast.status}`}
@@ -75,13 +82,19 @@ export function ForecastSection({ refreshKey = 0 }: { refreshKey?: unknown }) {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-ink-faint">MoM correlation</p>
+                    <p className="flex items-center gap-1 text-xs text-ink-faint">
+                      MoM correlation
+                      <InfoHint text="-1 to +1: how closely our index's month-to-month moves track MoSPI's official series' moves, direction and rough size, not exact values." />
+                    </p>
                     <p className="tabular text-sm font-semibold text-ink">
                       {forecast.data.cpi_benchmark.mom_correlation == null ? "n/a" : forecast.data.cpi_benchmark.mom_correlation.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-ink-faint">Mean abs. MoM diff</p>
+                    <p className="flex items-center gap-1 text-xs text-ink-faint">
+                      Mean abs. MoM diff
+                      <InfoHint text="On average, how many percentage points our month-over-month change differs from MoSPI's, ignoring direction -- a rough closeness gauge in the two series' own native % terms." />
+                    </p>
                     <p className="tabular text-sm font-semibold text-ink">
                       {forecast.data.cpi_benchmark.mean_absolute_mom_difference_pct_points == null
                         ? "n/a"

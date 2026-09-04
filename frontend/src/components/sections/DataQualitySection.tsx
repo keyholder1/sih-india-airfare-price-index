@@ -3,6 +3,7 @@ import type { DataQualityResult } from "../../types";
 import { SectionHeader } from "../layout/SectionHeader";
 import { Panel } from "../primitives/Panel";
 import { StatValue } from "../primitives/StatValue";
+import { InfoHint } from "../primitives/InfoHint";
 import { formatFractionPct, formatInt } from "../../utils/format";
 
 interface DataQualitySectionProps {
@@ -50,7 +51,13 @@ export function DataQualitySection({ quality, loading }: DataQualitySectionProps
       {quality && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <Panel className="p-5">
-            <p className="eyebrow">Overall quality</p>
+            <p className="eyebrow flex items-center gap-1">
+              Overall quality
+              <InfoHint
+                align="left"
+                text="A weighted blend of completeness, validity, duplicate rate, schema compliance and source success -- a transparent formula (src/data_quality/scoring.py), not a black box. A low score here is the validator doing its job on real messy data, not a sign the index itself is wrong: flagged/rejected rows never silently disappear."
+              />
+            </p>
             <div className="mt-3 flex items-center gap-4">
               <div>
                 <StatValue value={quality.quality_score} format={(v) => (v == null ? "—" : `${v.toFixed(1)}%`)} size="stat" />
@@ -72,23 +79,38 @@ export function DataQualitySection({ quality, loading }: DataQualitySectionProps
                 <dd className="tabular font-semibold text-ink">{formatInt(quality.records_received)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-ink-faint">Valid</dt>
+                <dt className="flex items-center gap-1 text-xs text-ink-faint">
+                  Valid
+                  <InfoHint text="Passed every check with zero caveats -- reaches the index pipeline with no asterisk." />
+                </dt>
                 <dd className="tabular font-semibold text-fall">{formatInt(quality.records_valid)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-ink-faint">Flagged</dt>
+                <dt className="flex items-center gap-1 text-xs text-ink-faint">
+                  Flagged
+                  <InfoHint text="Structurally fine and STILL used in the index -- just worth a second look (e.g. an unusually high fare, or a field this source doesn't provide). Flagged is not rejected." />
+                </dt>
                 <dd className="tabular font-semibold text-synth">{formatInt(quality.records_flagged)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-ink-faint">Rejected</dt>
+                <dt className="flex items-center gap-1 text-xs text-ink-faint">
+                  Rejected
+                  <InfoHint text="Excluded from the index entirely, each with exactly one stated reason (see Rejection reasons below) -- never silently dropped." />
+                </dt>
                 <dd className="tabular font-semibold text-rise">{formatInt(quality.records_rejected)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-ink-faint">Completeness</dt>
+                <dt className="flex items-center gap-1 text-xs text-ink-faint">
+                  Completeness
+                  <InfoHint text="Share of records with every required field present (route, dates, fare, currency, ...) -- about the record's shape, not whether its values look right." />
+                </dt>
                 <dd className="tabular text-ink">{formatFractionPct(quality.completeness_rate)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-ink-faint">Validity</dt>
+                <dt className="flex items-center gap-1 text-xs text-ink-faint">
+                  Validity
+                  <InfoHint text="Share of records that are fully Valid (no flags at all) -- stricter than completeness, since a record can be complete and still get flagged." />
+                </dt>
                 <dd className="tabular text-ink">{formatFractionPct(quality.validity_rate)}</dd>
               </div>
             </dl>

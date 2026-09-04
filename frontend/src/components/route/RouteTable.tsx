@@ -13,6 +13,7 @@ import {
   routeLabel,
 } from "../../utils/format";
 import { RouteStatusPill } from "./RouteStatusPill";
+import { InfoHint } from "../primitives/InfoHint";
 
 interface RouteTableProps {
   routes: RouteDetail[];
@@ -23,6 +24,7 @@ interface RouteTableProps {
 interface Column {
   key: RouteSortKey;
   label: string;
+  hint?: string;
   render: (r: RouteDetail) => React.ReactNode;
   align: "left" | "right";
   tone?: (r: RouteDetail) => string;
@@ -32,6 +34,7 @@ const COLUMNS: Column[] = [
   {
     key: "currentIndex",
     label: "Index",
+    hint: "This route's own price index, same base-period-= 100 convention as the national number above.",
     align: "right",
     render: (r) => formatIndex(r.currentIndex),
   },
@@ -46,12 +49,14 @@ const COLUMNS: Column[] = [
   {
     key: "trafficWeight",
     label: "Traffic wt.",
+    hint: "This route's share of national domestic passenger traffic (real DGCA data) -- how much it counts toward the national index, not how full its flights are.",
     align: "right",
     render: (r) => formatFractionPct(r.trafficWeight, 2),
   },
   {
     key: "contributionPoints",
     label: "Contribution",
+    hint: "How many points of the national index's latest move this one route is responsible for. All routes' contributions sum exactly to the index's point change.",
     align: "right",
     render: (r) => formatPoints(r.contributionPoints),
     tone: (r) =>
@@ -64,6 +69,7 @@ const COLUMNS: Column[] = [
   {
     key: "volatility",
     label: "Volatility",
+    hint: "How much this route's fare swings booking-window to booking-window (e.g. booking 3 days out vs. 60 days out) -- a stability measure, separate from whether the price went up or down.",
     align: "right",
     render: (r) => formatFractionPct(r.volatility, 1),
   },
@@ -102,19 +108,22 @@ export function RouteTable({
                 key={col.key}
                 className="py-2 pl-3 text-right font-semibold"
               >
-                <button
-                  type="button"
-                  onClick={() => toggleSort(col.key)}
-                  className={clsx(
-                    "inline-flex items-center gap-1 transition-colors hover:text-ink",
-                    sortKey === col.key && "text-ink",
-                  )}
-                >
-                  {col.label}
-                  <span className="text-[0.7em]">
-                    {sortKey === col.key ? (sortDir === "asc" ? "▲" : "▼") : "▾"}
-                  </span>
-                </button>
+                <span className="inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleSort(col.key)}
+                    className={clsx(
+                      "inline-flex items-center gap-1 transition-colors hover:text-ink",
+                      sortKey === col.key && "text-ink",
+                    )}
+                  >
+                    {col.label}
+                    <span className="text-[0.7em]">
+                      {sortKey === col.key ? (sortDir === "asc" ? "▲" : "▼") : "▾"}
+                    </span>
+                  </button>
+                  {col.hint && <InfoHint text={col.hint} align="right" />}
+                </span>
               </th>
             ))}
             <th className="py-2 pl-3 text-left font-semibold">Status</th>

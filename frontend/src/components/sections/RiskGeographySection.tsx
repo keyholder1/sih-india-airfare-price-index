@@ -5,6 +5,7 @@ import { SectionHeader } from "../layout/SectionHeader";
 import { Panel } from "../primitives/Panel";
 import { InflationHeatmap } from "../charts/InflationHeatmap";
 import { BookingHorizonChart } from "../charts/BookingHorizonChart";
+import { InfoHint } from "../primitives/InfoHint";
 
 interface RiskGeographySectionProps {
   analytics: AnalyticsResult;
@@ -30,7 +31,13 @@ export function RiskGeographySection({ analytics }: RiskGeographySectionProps) {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Panel className="p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <p className="eyebrow">Inflation matrix</p>
+            <p className="eyebrow flex items-center gap-1">
+              Inflation matrix
+              <InfoHint
+                align="left"
+                text="Origin (row) → destination (column), colour = % fare change. A blank cell means no data for that pair, never 0% -- missing is not the same as flat."
+              />
+            </p>
             <div role="radiogroup" aria-label="Matrix metric" className="inline-flex rounded-lg border border-hairline bg-surface-sunken p-0.5">
               {(["mom", "yoy"] as const).map((m) => (
                 <button
@@ -59,7 +66,13 @@ export function RiskGeographySection({ analytics }: RiskGeographySectionProps) {
         </Panel>
 
         <Panel className="p-5">
-          <p className="eyebrow">Booking-horizon volatility (national)</p>
+          <p className="eyebrow flex items-center gap-1">
+            Booking-horizon volatility (national)
+            <InfoHint
+              align="left"
+              text="“Coefficient of variation” = standard deviation ÷ mean fare within one booking window (e.g. ≤30 days out vs. 60+ days out). It measures how much fares swing around, not how expensive they are -- a high bar means unpredictable pricing, not a price spike."
+            />
+          </p>
           <p className="mt-1 text-xs text-ink-faint">
             Coefficient of variation of fares within each booking window -- higher means less predictable, not necessarily more expensive.
           </p>
