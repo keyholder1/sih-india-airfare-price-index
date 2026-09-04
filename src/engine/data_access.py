@@ -15,6 +15,8 @@ index_engine/data_quality do the actual computation.
 from __future__ import annotations
 
 import json
+import threading
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -114,6 +116,23 @@ def _generate_fallback_observations(n_months: int = 8) -> List[Dict[str, Any]]:
     return observations
 
 
+#: A single page load fires several concurrent requests (analytics,
+#: timeseries, data-quality, forecast, natural-events, ...) that each
+#: independently called db.load_observations(tree) -- a full Postgres
+#: fetch + JSONB deserialization of every row in that tree, repeated
+#: 5-6x for data that's identical across all of them within the same
+#: burst. Caching the *loaded observations list* here (not any
+#: statistic) for a few seconds turns that redundant fan-out into one
+#: real fetch per tree per burst -- verified live to cut concurrent
+#: page-load latency substantially (see api/services/analytics_service.py
+#: commit notes). Short enough (5s) that new data (e.g. the on-demand
+#: pipeline just persisting a fresh route) is visible again almost
+#: immediately; a lock guards concurrent requests racing to populate it.
+_OBSERVATION_CACHE_TTL_SECONDS = 5.0
+_observation_cache_lock = threading.Lock()
+_observation_cache: Dict[str, Tuple[float, List[Dict[str, Any]]]] = {}
+
+
 def _load_tree(tree: str, flat_file_dir: Path) -> List[Dict[str, Any]]:
     """Postgres is now the source of truth (see src/engine/db.py) --
     every write from the on-demand scrape pipeline (api/services/
@@ -124,10 +143,18 @@ def _load_tree(tree: str, flat_file_dir: Path) -> List[Dict[str, Any]]:
     judge running this without DATABASE_URL set still sees whatever was
     last committed to data/, never a crash. The two are never merged in
     one response -- a caller gets one or the other, not a blend."""
+    cache_key = f"pg:{tree}"
+    with _observation_cache_lock:
+        cached = _observation_cache.get(cache_key)
+        if cached is not None and time.monotonic() - cached[0] < _OBSERVATION_CACHE_TTL_SECONDS:
+            return cached[1]
+
     if db.is_configured():
         try:
             observations = db.load_observations(tree)
             if observations:
+                with _observation_cache_lock:
+                    _observation_cache[cache_key] = (time.monotonic(), observations)
                 return observations
         except Exception:
             # Database configured but unreachable (e.g. the container

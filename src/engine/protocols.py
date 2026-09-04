@@ -132,6 +132,44 @@ class NewsEvent:
 
 
 @dataclass
+class NaturalEventContext:
+    """One real NASA EONET natural event matched to a route's price
+    movement -- contextual only, never a claimed cause. See
+    index_engine.eonet_context / docs/eonet_context.md."""
+
+    event_id: str
+    title: str
+    category: str
+    category_label: str
+    category_emoji: str
+    event_date: str  # ISO 8601
+    distance_from_origin_km: Optional[float]
+    distance_from_destination_km: Optional[float]
+    temporal_distance_days: float
+    relevance_score: float
+    relevance_reason: list[str]
+    source_url: Optional[str]
+    is_closed: bool
+
+
+@dataclass
+class WeatherSnapshot:
+    """Current conditions at one airport (OpenWeatherMap) -- a live
+    snapshot, not scored/ranked. See index_engine.weather_context."""
+
+    iata_code: str
+    city_name: str
+    observed_at: str  # ISO 8601
+    temperature_c: float
+    feels_like_c: float
+    condition: str
+    description: str
+    wind_speed_ms: float
+    humidity_pct: int
+    visibility_m: Optional[int]
+
+
+@dataclass
 class RouteContext:
     """News/event context for a route."""
 
@@ -141,6 +179,16 @@ class RouteContext:
     movement_pct: Optional[float]
     events: list[NewsEvent]
     data_source: str  # "real" | "synthetic"
+    #: NASA EONET natural-event context -- additive, optional. Empty list
+    #: (never None) when unavailable/not applicable; see
+    #: natural_events_status for why.
+    natural_events: list[NaturalEventContext] = field(default_factory=list)
+    natural_events_status: str = "UNAVAILABLE"  # "OK" | "UNAVAILABLE"
+    #: OpenWeatherMap current-conditions context -- additive, optional.
+    #: None when unavailable/not configured; see weather_status.
+    weather_origin: Optional[WeatherSnapshot] = None
+    weather_destination: Optional[WeatherSnapshot] = None
+    weather_status: str = "UNAVAILABLE"  # "OK" | "PARTIAL" | "UNAVAILABLE"
 
 
 # ── Protocol interfaces ───────────────────────────────────────────

@@ -17,6 +17,10 @@ from __future__ import annotations
 
 import json
 import math
+import threading
+import time
+from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -24,12 +28,64 @@ import pandas as pd
 
 import data_quality as data_quality_mod
 from index_engine.analytics import AirfareAnalytics
+from index_engine.eonet_context import CATEGORY_EMOJI, CATEGORY_LABELS, EonetContextService
 from index_engine.mospi_income import default_mospi_income_path, load_mospi_income_series
+from index_engine.news_context import DEFAULT_SIGNIFICANCE_THRESHOLD_PCT, is_significant_movement, route_movement_from_row
 from index_engine.utils import shift_period
 
 from src.engine import data_access
 
 _RECOMMENDED_ROUTES_PATH = data_access.REPO_ROOT / "data" / "routes" / "recommended_routes.json"
+
+#: A real browser page load fires several of these functions
+#: concurrently (analytics, timeseries, data-quality, forecast,
+#: natural-events) -- without this, each independently redid its own
+#: AirfareAnalytics.calculate()/validate_fare_batch() from scratch even
+#: though they're reading the exact same underlying observations moments
+#: apart. Verified live: this was the dominant remaining cost even after
+#: caching the raw observation *list* (data_access.py) and running
+#: multiple worker processes -- the actual pandas computation itself,
+#: repeated 5-6x per page load, not the I/O. A short TTL (not an
+#: explicit invalidation hook) is deliberate: long enough to absorb one
+#: page-load burst, short enough that a just-completed on-demand
+#: pipeline run (Section 8) is reflected on the next request shortly
+#: after, without this module needing to know about every write path
+#: into Postgres.
+_RESULT_CACHE_TTL_SECONDS = 8.0
+#: In-process only, deliberately. A Postgres-backed version of this
+#: cache was tried and reverted: it works for the news article cache
+#: (one write per real API call, rare) but under a real concurrent
+#: page-load burst -- 4 worker processes each racing to UPSERT the same
+#: cache_key the moment it first goes cold -- the row-lock contention
+#: measured *worse* than no cache at all live (one run: 71s and then
+#: 17s for requests that should have been near-instant cache hits, vs.
+#: ~7s uncached). An in-process cache only helps the fraction of
+#: requests that happen to land back on the same worker process, but
+#: never makes anything worse, which matters more under real time
+#: pressure than a theoretical better hit rate that measured unsafe.
+_result_cache_lock = threading.Lock()
+_result_cache: Dict[tuple, tuple] = {}
+
+
+def _cached(ttl: float = _RESULT_CACHE_TTL_SECONDS):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            key = (fn.__name__, args, tuple(sorted(kwargs.items())))
+            with _result_cache_lock:
+                cached = _result_cache.get(key)
+                if cached is not None and time.monotonic() - cached[0] < ttl:
+                    return cached[1]
+            value = fn(*args, **kwargs)
+            with _result_cache_lock:
+                _result_cache[key] = (time.monotonic(), value)
+            return value
+
+        return wrapper
+
+    return decorator
+
+
 _MOSPI_CPI_PATH = data_access.REPO_ROOT / "data" / "benchmarks" / "cpi_1337.xlsx"
 _MOSPI_INCOME_PATH = default_mospi_income_path(data_access.REPO_ROOT)
 
@@ -56,6 +112,7 @@ def _period_bounds(observations: List[Dict[str, Any]]) -> tuple[str, str]:
     return periods[0], periods[-1]
 
 
+@_cached()
 def get_analytics() -> Dict[str, Any]:
     """Full AnalyticsResult.to_dict() -- national index, volatility,
     route inflation, rankings, route map objects, traffic coverage."""
@@ -103,6 +160,7 @@ def get_analytics() -> Dict[str, Any]:
     return payload
 
 
+@_cached()
 def get_timeseries(start_date: str, end_date: str) -> List[Dict[str, Any]]:
     """One point per calendar month in [start_date, end_date], in the
     engine's own field names (national_index/mom_change_pct/yoy_change_pct)
@@ -149,6 +207,7 @@ def get_recommended_routes() -> Dict[str, Any]:
         return json.load(f)
 
 
+@_cached()
 def get_data_quality() -> Dict[str, Any]:
     """Full data_quality.DataQualityResult.to_dict() for whatever raw
     observations are on disk (see data_access.load_raw_observations)."""
@@ -157,6 +216,85 @@ def get_data_quality() -> Dict[str, Any]:
     return result.to_dict()
 
 
+@_cached()
+def get_natural_events() -> Dict[str, Any]:
+    """Compact, national-level list of real NASA EONET natural events
+    that are relevant context for a *significant* recent route movement
+    -- deliberately not "every EONET event near India" (that would
+    overwhelm a national view, see docs/eonet_context.md item 10), only
+    ones actually associated with a route whose fare moved enough to be
+    worth explaining (same is_significant_movement threshold the news
+    context layer uses -- reused, not duplicated).
+
+    One EonetContextService instance is reused across every significant
+    route so its underlying EonetClient's in-process cache turns what
+    would otherwise be N separate India-wide EONET fetches into one real
+    HTTP call. Never modifies or is consulted by the index calculation
+    above -- this function is read-only against its own already-computed
+    route_inflation output.
+    """
+    observations, provenance = data_access.load_validated_observations()
+    base_period, current_period = _period_bounds(observations)
+    df = pd.DataFrame(observations)
+    weights, _weights_real = data_access.build_weights(observations)
+
+    engine = AirfareAnalytics(base_period=base_period, weights=weights if len(weights) else None)
+    result = engine.calculate(observations=df, current_period=current_period)
+
+    # Same NEWS_PROVIDER=mock guard real_adapters.RealNewsContextEngine
+    # uses -- keeps this endpoint from making a real EONET call from the
+    # test suite's default environment (see tests/conftest.py).
+    import os
+
+    from index_engine.eonet_client import EonetClient
+    from src.engine.real_adapters import _OfflineHttpClient
+
+    if os.environ.get("NEWS_PROVIDER", "").lower() == "mock":
+        eonet_service = EonetContextService(client=EonetClient(client=_OfflineHttpClient()))
+    else:
+        eonet_service = EonetContextService()
+    as_of = datetime.now(timezone.utc)
+
+    items: list[Dict[str, Any]] = []
+    routes_checked = 0
+    eonet_status = "OK"
+    for row in result.route_inflation:
+        if row.mom_inflation_pct is None or not is_significant_movement(row.mom_inflation_pct, DEFAULT_SIGNIFICANCE_THRESHOLD_PCT):
+            continue
+        routes_checked += 1
+        movement = route_movement_from_row(row, period=current_period, as_of=as_of, metric="mom")
+        if movement is None:
+            continue
+        context = eonet_service.get_context(movement)
+        if context.status != "OK":
+            eonet_status = context.status
+            continue
+        for m in context.matches:
+            items.append(
+                {
+                    "event_id": m.event.event_id,
+                    "title": m.event.title,
+                    "category": m.event.category,
+                    "category_label": CATEGORY_LABELS.get(m.event.category, m.event.category),
+                    "category_emoji": CATEGORY_EMOJI.get(m.event.category, ""),
+                    "event_date": m.event.event_date.isoformat(),
+                    "route": row.route,
+                    "route_mom_pct": row.mom_inflation_pct,
+                    "relevance_score": m.relevance_score,
+                    "source_url": m.event.source_url,
+                }
+            )
+
+    items.sort(key=lambda i: i["relevance_score"], reverse=True)
+    return {
+        "events": items[:10],
+        "routes_with_significant_movement_checked": routes_checked,
+        "status": eonet_status if routes_checked > 0 else "OK",
+        "data_source": provenance,
+    }
+
+
+@_cached()
 def get_forecast() -> Dict[str, Any]:
     """National baseline forecast (one period past the last real period)
     plus a MoSPI CPI benchmark comparison, if the reference file is

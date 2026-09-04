@@ -15,6 +15,7 @@ scraped (not scraper mock output, not this file's own demo fallback),
 
 from __future__ import annotations
 
+import asyncio
 import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -23,6 +24,8 @@ import pandas as pd
 
 from index_engine import AirfarePriceIndex
 from index_engine.composite_news_provider import CompositeNewsProvider
+from index_engine.eonet_client import EonetClient
+from index_engine.eonet_context import CATEGORY_EMOJI, CATEGORY_LABELS, EonetContextService
 from index_engine.eventregistry_news_provider import ENV_API_KEY as EVENTREGISTRY_ENV_API_KEY, EventRegistryNewsProvider
 from index_engine.gdelt_news_provider import GdeltNewsProvider
 from index_engine.mock_news_provider import MockNewsProvider
@@ -31,7 +34,9 @@ from index_engine.news_provider import NewsProvider
 from index_engine.newsapi_org_news_provider import ENV_API_KEY as NEWSAPI_ORG_ENV_API_KEY, NewsApiOrgProvider
 from index_engine.newsdata_news_provider import ENV_API_KEY as NEWSDATA_ENV_API_KEY, NewsdataNewsProvider
 from index_engine.route_analysis import RouteInflationRow
+from index_engine.openweather_client import OpenWeatherClient
 from index_engine.utils import pct_change, shift_period
+from index_engine.weather_context import WeatherContextService
 
 import data_quality as data_quality_mod
 
@@ -39,6 +44,7 @@ from src.engine import data_access
 from src.engine.news_cache_provider import CachingNewsProvider
 from src.engine.protocols import (
     IndexResult,
+    NaturalEventContext,
     NewsEvent,
     QualityReport,
     RouteAnalysis,
@@ -47,6 +53,7 @@ from src.engine.protocols import (
     RouteIndex,
     SourceHealth,
     TimeseriesPoint,
+    WeatherSnapshot,
 )
 
 REPO_ROOT = data_access.REPO_ROOT
@@ -68,6 +75,25 @@ REPO_ROOT = data_access.REPO_ROOT
 #: current time.
 _USE_MOCK_NEWS = os.environ.get("NEWS_PROVIDER", "").lower() == "mock"
 _MOCK_NEWS_ANCHOR = datetime(2026, 8, 14, 9, 0, 0)  # naive, matches DEMO_ARTICLES
+
+
+class _OfflineHttpClient:
+    """Stands in for httpx.Client when NEWS_PROVIDER=mock -- every call
+    fails immediately with no real socket/DNS activity, so
+    EonetClient/OpenWeatherClient take the exact same "network failed"
+    code path they'd take for a genuine outage (degrading to their own
+    UNAVAILABLE status), without ever making a live call. Same reasoning
+    as MockNewsProvider existing to keep GDELT out of the test suite --
+    EONET (keyless) and OpenWeatherMap have no equivalent mock provider
+    of their own, so this is the mechanism that keeps them out instead."""
+
+    def get(self, url: str, params: Optional[dict] = None):  # noqa: ARG002
+        import httpx
+
+        raise httpx.ConnectError("NEWS_PROVIDER=mock -- EONET/weather network calls are disabled in test/mock mode.")
+
+    def close(self) -> None:
+        pass
 
 
 def _default_news_provider() -> NewsProvider:
@@ -383,7 +409,12 @@ class RealNewsContextEngine:
     response is never mislabeled either way.
     """
 
-    def __init__(self, provider: Optional[NewsProvider] = None) -> None:
+    def __init__(
+        self,
+        provider: Optional[NewsProvider] = None,
+        eonet_service: Optional[EonetContextService] = None,
+        weather_service: Optional[WeatherContextService] = None,
+    ) -> None:
         if provider is not None:
             self._provider = provider
         elif _USE_MOCK_NEWS:
@@ -391,6 +422,54 @@ class RealNewsContextEngine:
         else:
             self._provider = _default_news_provider()
         self._service = NewsContextService(provider=self._provider)
+        # EONET/weather have no fabricated-content mock provider of their
+        # own (unlike news' MockNewsProvider) -- when NEWS_PROVIDER=mock
+        # (the test suite's default, see tests/conftest.py), both are
+        # wired to an offline stub instead so this endpoint never makes a
+        # real network call from an automated test, same discipline as
+        # avoiding GDELT there. Each degrades to its own honest
+        # "unavailable" state either way -- see docs/eonet_context.md
+        # "Failure isolation".
+        if eonet_service is not None:
+            self._eonet_service = eonet_service
+        elif _USE_MOCK_NEWS:
+            self._eonet_service = EonetContextService(client=EonetClient(client=_OfflineHttpClient()))
+        else:
+            self._eonet_service = EonetContextService()
+
+        if weather_service is not None:
+            self._weather_service = weather_service
+        elif _USE_MOCK_NEWS:
+            self._weather_service = WeatherContextService(client=OpenWeatherClient(client=_OfflineHttpClient()))
+        else:
+            self._weather_service = WeatherContextService()
+
+    def _safe_eonet_context(self, movement):
+        """Sync wrapper offloaded via asyncio.to_thread (see
+        get_route_context) -- EONET must never prevent this endpoint
+        from returning a valid response, see docs/eonet_context.md
+        "Failure isolation". The service itself already never raises;
+        this is a second, deliberate layer at the actual
+        dashboard-facing seam."""
+        try:
+            return self._eonet_service.get_context(movement)
+        except Exception as exc:  # noqa: BLE001
+            from index_engine.eonet_context import EonetContextResult
+
+            return EonetContextResult(movement=movement, matches=[], status="UNAVAILABLE", error_detail=f"{type(exc).__name__}: {exc}")
+
+    def _safe_weather_context(self, origin: str, destination: str):
+        """Sync wrapper offloaded via asyncio.to_thread (see
+        get_route_context) -- same failure-isolation reasoning as
+        _safe_eonet_context."""
+        try:
+            return self._weather_service.get_route_weather(origin, destination)
+        except Exception as exc:  # noqa: BLE001
+            from index_engine.weather_models import RouteWeatherContext
+
+            return RouteWeatherContext(
+                route=f"{origin}-{destination}", origin=None, destination=None, status="UNAVAILABLE", error_detail=f"{type(exc).__name__}: {exc}"
+            )
 
     async def get_route_context(self, route_code: str) -> RouteContext:
         observations, _is_real_data = data_access.load_validated_observations()
@@ -441,7 +520,21 @@ class RealNewsContextEngine:
                 data_source=overall_data_source,
             )
 
-        context_result = self._service.get_context(movement)
+        # News/EONET/weather each make real, potentially multi-second
+        # blocking network calls (httpx.Client, synchronous). Run all
+        # three concurrently in worker threads (asyncio.to_thread) rather
+        # than sequentially inline -- calling blocking I/O directly
+        # inside this async function would freeze the single event loop
+        # for its entire duration, stalling every *other* request the
+        # server is handling (including unrelated ones like GET
+        # /api/v1/analytics) until it returns. Also meaningfully faster:
+        # total latency becomes roughly max(news, eonet, weather) instead
+        # of their sum.
+        context_result, eonet_result, weather_result = await asyncio.gather(
+            asyncio.to_thread(self._service.get_context, movement),
+            asyncio.to_thread(self._safe_eonet_context, movement),
+            asyncio.to_thread(self._safe_weather_context, current_ri.origin, current_ri.destination),
+        )
         direction_map = {"increase": "up", "decrease": "down"}
 
         events = [
@@ -456,6 +549,41 @@ class RealNewsContextEngine:
             for match in context_result.matches
         ]
 
+        natural_events = [
+            NaturalEventContext(
+                event_id=m.event.event_id,
+                title=m.event.title,
+                category=m.event.category,
+                category_label=CATEGORY_LABELS.get(m.event.category, m.event.category),
+                category_emoji=CATEGORY_EMOJI.get(m.event.category, ""),
+                event_date=m.event.event_date.isoformat(),
+                distance_from_origin_km=m.distance_from_origin_km,
+                distance_from_destination_km=m.distance_from_destination_km,
+                temporal_distance_days=m.temporal_distance_days,
+                relevance_score=m.relevance_score,
+                relevance_reason=m.relevance_reason,
+                source_url=m.event.source_url,
+                is_closed=m.event.is_closed,
+            )
+            for m in eonet_result.matches
+        ]
+
+        def _weather_snapshot(w) -> Optional[WeatherSnapshot]:
+            if w is None:
+                return None
+            return WeatherSnapshot(
+                iata_code=w.iata_code,
+                city_name=w.city_name,
+                observed_at=w.observed_at.isoformat(),
+                temperature_c=w.temperature_c,
+                feels_like_c=w.feels_like_c,
+                condition=w.condition,
+                description=w.description,
+                wind_speed_ms=w.wind_speed_ms,
+                humidity_pct=w.humidity_pct,
+                visibility_m=w.visibility_m,
+            )
+
         return RouteContext(
             route=route_code,
             significant_movement=self._service.config.significance_threshold_pct <= abs(movement.change_pct),
@@ -463,4 +591,9 @@ class RealNewsContextEngine:
             movement_pct=movement.change_pct,
             events=events,
             data_source=overall_data_source,
+            natural_events=natural_events,
+            natural_events_status=eonet_result.status,
+            weather_origin=_weather_snapshot(weather_result.origin),
+            weather_destination=_weather_snapshot(weather_result.destination),
+            weather_status=weather_result.status,
         )

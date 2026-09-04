@@ -15,6 +15,7 @@ import type {
   DataStatus,
   ForecastPayload,
   IndexTimeseriesPoint,
+  NationalNaturalEventsResult,
   RecommendedRoutesFile,
   RouteContext,
   ScrapeJob,
@@ -35,8 +36,14 @@ function delay<T>(value: T): Promise<T> {
  *  indefinitely with no error and no way to recover. Matters most for
  *  Section 8's job-status polling, where an indefinitely-hung request
  *  would freeze the whole poll loop (see useScrapeJob.ts's retry logic,
- *  which depends on a request eventually failing rather than hanging). */
-const DEFAULT_TIMEOUT_MS = 20_000;
+ *  which depends on a request eventually failing rather than hanging).
+ *  35s (not the original 20s): the analytics/timeseries/data-quality/
+ *  forecast/natural-events endpoints each do real pandas computation
+ *  over the live dataset, and a real concurrent page-load burst of all
+ *  of them measured up to ~15s worst-case even with multiple backend
+ *  worker processes -- 20s cut that margin too close and produced a
+ *  real, reproduced "Could not load dashboard data" failure. */
+const DEFAULT_TIMEOUT_MS = 35_000;
 
 function withTimeout(ms: number): AbortSignal {
   return AbortSignal.timeout(ms);
@@ -134,12 +141,33 @@ function mockRouteContext(route: string): RouteContext {
     movement_pct: null,
     events: [],
     data_source: "synthetic",
+    natural_events: [],
+    natural_events_status: "UNAVAILABLE",
+    weather_origin: null,
+    weather_destination: null,
+    weather_status: "UNAVAILABLE",
   };
 }
 
 export function getRouteContext(route: string): Promise<RouteContext> {
   if (DATA_MODE === "api") return apiGet<RouteContext>(`/api/v1/routes/${route}/context`);
   return delay(mockRouteContext(route));
+}
+
+/**
+ * Compact national list of real NASA EONET natural events associated
+ * with a significant route movement -- GET /api/v1/analytics/events
+ * (api/services/analytics_service.get_natural_events). No mock fixture
+ * exists (added after the fixture set was frozen) -- mock mode returns
+ * an honestly-empty, clearly-labelled result instead of a network call.
+ */
+function mockNaturalEvents(): NationalNaturalEventsResult {
+  return { events: [], routes_with_significant_movement_checked: 0, status: "OK", data_source: "synthetic" };
+}
+
+export function getNaturalEvents(): Promise<NationalNaturalEventsResult> {
+  if (DATA_MODE === "api") return apiGet<NationalNaturalEventsResult>("/api/v1/analytics/events");
+  return delay(mockNaturalEvents());
 }
 
 function mockForecast(): ForecastPayload {

@@ -347,6 +347,43 @@ class NewsEventResponse(BaseModel):
     data_source: str = Field(..., description="'real' or 'synthetic'.")
 
 
+class NaturalEventResponse(BaseModel):
+    """One real NASA EONET natural event matched to a route's price
+    movement -- contextual only, never a claimed cause. See
+    docs/eonet_context.md."""
+
+    event_id: str = Field(..., description="EONET event id, e.g. 'EONET_23868'.")
+    title: str = Field(..., description="EONET's own event title.")
+    category: str = Field(..., description="EONET category id, e.g. 'severeStorms'.")
+    category_label: str = Field(..., description="Human-readable category label.")
+    category_emoji: str = Field(..., description="Display emoji for the category.")
+    event_date: str = Field(..., description="ISO 8601 event date (latest recorded position/date).")
+    distance_from_origin_km: Optional[float] = Field(None, description="Great-circle distance from the route's origin airport, km.")
+    distance_from_destination_km: Optional[float] = Field(None, description="Great-circle distance from the route's destination airport, km.")
+    temporal_distance_days: float = Field(..., description="Days between the event and the route's movement date.")
+    relevance_score: float = Field(..., description="Relevance score (0-1) -- geographic + temporal proximity, not causal.")
+    relevance_reason: list[str] = Field(..., description="Plain-language reasons this event matched.")
+    source_url: Optional[str] = Field(None, description="Original EONET/source URL, if available.")
+    is_closed: bool = Field(..., description="Whether EONET has marked this event closed.")
+
+
+class WeatherConditionsResponse(BaseModel):
+    """Current conditions at one airport (OpenWeatherMap) -- a live
+    snapshot, not scored/ranked, never claimed as a cause of any fare
+    movement."""
+
+    iata_code: str = Field(..., description="IATA airport code.")
+    city_name: str = Field(..., description="City name as returned by OpenWeatherMap.")
+    observed_at: str = Field(..., description="ISO 8601 observation timestamp.")
+    temperature_c: float = Field(..., description="Temperature, Celsius.")
+    feels_like_c: float = Field(..., description="'Feels like' temperature, Celsius.")
+    condition: str = Field(..., description="Short condition label, e.g. 'Rain'.")
+    description: str = Field(..., description="Longer condition description.")
+    wind_speed_ms: float = Field(..., description="Wind speed, m/s.")
+    humidity_pct: int = Field(..., description="Relative humidity, %.")
+    visibility_m: Optional[int] = Field(None, description="Visibility, metres, if reported.")
+
+
 class RouteContextResponse(BaseModel):
     """Response for GET /api/v1/routes/{route}/context."""
 
@@ -356,6 +393,13 @@ class RouteContextResponse(BaseModel):
     movement_pct: Optional[float] = Field(None, description="Percentage of fare movement.")
     events: list[NewsEventResponse] = Field(..., description="Related news/events.")
     data_source: str = Field(..., description="'real' or 'synthetic'.")
+    natural_events: list[NaturalEventResponse] = Field(
+        default_factory=list, description="Real NASA EONET natural events matched to this route -- contextual only, never a claimed cause."
+    )
+    natural_events_status: str = Field("UNAVAILABLE", description="'OK' or 'UNAVAILABLE' -- whether the EONET fetch itself succeeded.")
+    weather_origin: Optional[WeatherConditionsResponse] = Field(None, description="Current conditions at the origin airport, if available.")
+    weather_destination: Optional[WeatherConditionsResponse] = Field(None, description="Current conditions at the destination airport, if available.")
+    weather_status: str = Field("UNAVAILABLE", description="'OK', 'PARTIAL', or 'UNAVAILABLE'.")
 
     model_config = {
         "json_schema_extra": {

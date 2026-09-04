@@ -55,7 +55,12 @@ export default function App() {
           <RiskGeographySection analytics={analytics.data} />
           <NewsContextSection selectedRoute={selectedRoute} />
           <ForecastSection refreshKey={dataVersion} />
-          <RouteLookupSection onComplete={() => setDataVersion((v) => v + 1)} />
+          <RouteLookupSection
+            onComplete={(route) => {
+              setDataVersion((v) => v + 1);
+              setSelectedRoute(route);
+            }}
+          />
         </div>
       )}
     </DashboardShell>
