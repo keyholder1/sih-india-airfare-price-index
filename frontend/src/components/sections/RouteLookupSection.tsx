@@ -24,8 +24,13 @@ function stepIndex(status: string): number {
  * already has previously-recorded real data, the fresh SerpApi call is
  * skipped and that data is reused instead (see result.from_cache). */
 export function RouteLookupSection({ onComplete }: { onComplete?: (route: string) => void }) {
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
+  // Pre-filled (not just a placeholder hint) so the button is enabled and
+  // a first click works immediately -- an empty field showing "BLR" only
+  // as grey placeholder text reads as already-filled-in, and clicking
+  // Run against two empty inputs does nothing (the button is disabled,
+  // but that wasn't obvious enough at a glance).
+  const [origin, setOrigin] = useState("BLR");
+  const [destination, setDestination] = useState("DEL");
   const [formError, setFormError] = useState<string | null>(null);
   const { job, error, retrying, isRunning, start, reset } = useScrapeJob();
 
