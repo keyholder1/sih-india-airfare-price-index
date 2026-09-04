@@ -95,15 +95,32 @@ def fake_db(monkeypatch):
     return fake
 
 
-def test_cache_hit_finishes_in_one_step(fake_db, monkeypatch):
+def test_cache_hit_walks_the_same_pills_as_a_fresh_run_before_finishing(fake_db, monkeypatch):
     fake_db.existing_validated_count = 3
     monkeypatch.setattr(
         svc, "_recompute_and_summarize",
         lambda origin, destination, from_cache, quality_fields=None: {"from_cache": from_cache, "route": f"{origin}-{destination}"},
     )
 
+    # Poll 1: cache check -- doesn't finish in one step, moves to a
+    # visible "Scraping" pill first (see STEP_CACHE_VERIFY's docstring).
     svc.advance_job("job-1")
+    assert fake_db.job["status"] == db.JOB_SCRAPING
+    assert fake_db.job["step"] == svc.STEP_CACHE_VERIFY
+    assert fake_db.job["result"] is None  # not done yet -- no result to show
 
+    # Poll 2: Data Quality pill.
+    svc.advance_job("job-1")
+    assert fake_db.job["status"] == db.JOB_VALIDATING
+    assert fake_db.job["step"] == svc.STEP_CACHE_VALIDATED
+
+    # Poll 3: Index Engine pill.
+    svc.advance_job("job-1")
+    assert fake_db.job["status"] == db.JOB_INDEXING
+    assert fake_db.job["step"] == svc.STEP_CACHE_INDEXED
+
+    # Poll 4: actually finishes.
+    svc.advance_job("job-1")
     assert fake_db.job["status"] == db.JOB_DONE
     assert fake_db.job["result"]["from_cache"] is True
 

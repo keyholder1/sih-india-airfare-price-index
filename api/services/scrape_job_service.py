@@ -23,7 +23,12 @@ one poll per step instead of one background task doing everything:
 
     step 0            -- cache check: reuse existing validated data for
                           this route if any exists, otherwise start
-                          scraping
+                          scraping. A cache hit still walks through
+                          steps 100-102 (Scraping/Data Quality/Index
+                          Engine, one poll each) before finishing --
+                          skips the real network calls, but not the
+                          pills, so a route that's already been
+                          collected doesn't jump straight to Done.
     steps 1..6         -- one booking-horizon date's SerpApi call each
                           (see generate_booking_horizon_dates -- always
                           exactly 6 buckets), raw observations inserted
@@ -66,6 +71,19 @@ VALID_IATA = re.compile(r"^[A-Z]{3}$")
 N_DATE_STEPS = 6
 STEP_VALIDATE = N_DATE_STEPS + 1  # 7
 STEP_RECOMPUTE = N_DATE_STEPS + 2  # 8 -- terminal, only used as the stored step number
+
+#: A cache-hit route (existing_count > 0 in _step_check_cache) skips real
+#: scraping entirely, but still walks through the same Scraping/Data
+#: Quality/Index Engine pills one poll at a time rather than jumping
+#: straight to Done -- without this the frontend's step indicator (see
+#: RouteLookupSection.tsx's STEPS) never visibly moves for a route that's
+#: already been collected, which reads as broken/instant rather than as a
+#: (genuinely fast, since there's no network call) real pipeline stage.
+#: High, disjoint from 0..8 so advance_job's step-based dispatch below
+#: can't mistake one of these for a real scrape/validate/recompute step.
+STEP_CACHE_VERIFY = 100
+STEP_CACHE_VALIDATED = 101
+STEP_CACHE_INDEXED = 102
 
 
 def _route_spec(origin: str, destination: str) -> RouteSpec:
@@ -139,6 +157,18 @@ def advance_job(job_id: str) -> None:
             return
 
         step = state["step"]
+        if step == STEP_CACHE_VERIFY:
+            _step_cache_validating(job_id)
+            return
+
+        if step == STEP_CACHE_VALIDATED:
+            _step_cache_indexing(job_id)
+            return
+
+        if step == STEP_CACHE_INDEXED:
+            _step_cache_finish(job_id, origin, destination)
+            return
+
         if step < N_DATE_STEPS:
             pending_dates = state["pending_dates"] or []
             _step_scrape_one_date(job_id, origin, destination, run_id, pending_dates, step)
@@ -161,14 +191,15 @@ def _step_check_cache(job_id: str, origin: str, destination: str) -> None:
         # Already have real, previously-collected data for this exact
         # route -- reuse it rather than spend real SerpApi quota and the
         # viewer's time on a redundant call. A caller can always tell
-        # which happened from result.from_cache.
-        result = _recompute_and_summarize(origin, destination, from_cache=True)
+        # which happened from result.from_cache. Still walks the same
+        # Scraping/Data Quality/Index Engine pills as a fresh run, one per
+        # poll (see STEP_CACHE_VERIFY et al.) -- just skips the actual
+        # network calls, so it's fast, not instant-and-invisible.
         db.advance_job(
             job_id,
-            step=STEP_RECOMPUTE,
-            status=db.JOB_DONE,
-            message="Done (used previously-recorded data).",
-            result=result,
+            step=STEP_CACHE_VERIFY,
+            status=db.JOB_SCRAPING,
+            message=f"Found previously-recorded real data for {origin}-{destination} -- verifying it's still valid...",
         )
         return
 
@@ -177,6 +208,35 @@ def _step_check_cache(job_id: str, origin: str, destination: str) -> None:
         step=0,
         status=db.JOB_SCRAPING,
         message=f"No prior data for {origin}-{destination} -- calling SerpApi live across all booking-horizon windows...",
+    )
+
+
+def _step_cache_validating(job_id: str) -> None:
+    db.advance_job(
+        job_id,
+        step=STEP_CACHE_VALIDATED,
+        status=db.JOB_VALIDATING,
+        message="Confirming the stored Data Quality report is still current...",
+    )
+
+
+def _step_cache_indexing(job_id: str) -> None:
+    db.advance_job(
+        job_id,
+        step=STEP_CACHE_INDEXED,
+        status=db.JOB_INDEXING,
+        message="Recomputing the national index from the stored data...",
+    )
+
+
+def _step_cache_finish(job_id: str, origin: str, destination: str) -> None:
+    result = _recompute_and_summarize(origin, destination, from_cache=True)
+    db.advance_job(
+        job_id,
+        step=STEP_RECOMPUTE,
+        status=db.JOB_DONE,
+        message="Done (used previously-recorded data).",
+        result=result,
     )
 
 
