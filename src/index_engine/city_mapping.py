@@ -53,6 +53,7 @@ IATA_TO_CITY: Dict[str, str] = {
     "IXB": "BAGDOGRA",
     "IXL": "LEH",
     "GOI": "DABOLIM",  # DGCA lists Goa's airport by its old name "DABOLIM"
+    "TRV": "TRIVANDRUM",  # DGCA lists Thiruvananthapuram by its old name "TRIVANDRUM"
 }
 
 CITY_TO_IATA: Dict[str, str] = {city: iata for iata, city in IATA_TO_CITY.items()}

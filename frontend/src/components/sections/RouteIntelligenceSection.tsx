@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { AnalyticsResult } from "../../types";
+import type { AnalyticsResult, ScrapeJobResult } from "../../types";
 import { useRecommendedRoutes } from "../../hooks/useRoutes";
-import { buildRouteDetails, findRouteDetail } from "../../utils/routes";
+import { buildAdHocRouteDetail, buildRouteDetails, findRouteDetail } from "../../utils/routes";
 import type { HeatMetric } from "../../utils/heat";
 import { routeLabel } from "../../utils/format";
 import { SectionHeader } from "../layout/SectionHeader";
@@ -15,21 +15,30 @@ interface RouteIntelligenceSectionProps {
   analytics: AnalyticsResult;
   selectedRoute: string | null;
   onRouteSelect: (route: string | null) => void;
+  /** Most recent Section 8 on-demand result for a route outside the
+   *  tracked/weighted set, if any -- see buildAdHocRouteDetail. */
+  adHocResult?: ScrapeJobResult | null;
 }
 
 export function RouteIntelligenceSection({
   analytics,
   selectedRoute,
   onRouteSelect,
+  adHocResult,
 }: RouteIntelligenceSectionProps) {
   const recommended = useRecommendedRoutes();
   const sectionRef = useRef<HTMLDivElement>(null);
   const [heatMetric, setHeatMetric] = useState<HeatMetric>("mom");
 
-  const routes = useMemo(
+  const trackedRoutes = useMemo(
     () => buildRouteDetails(analytics, recommended.data),
     [analytics, recommended.data],
   );
+  const routes = useMemo(() => {
+    if (!adHocResult) return trackedRoutes;
+    const adHoc = buildAdHocRouteDetail(adHocResult, trackedRoutes);
+    return adHoc ? [...trackedRoutes, adHoc] : trackedRoutes;
+  }, [trackedRoutes, adHocResult]);
   const selectedDetail = findRouteDetail(routes, selectedRoute);
 
   // Bring the section into view when a route is selected from elsewhere on

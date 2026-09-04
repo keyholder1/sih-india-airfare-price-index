@@ -31,6 +31,18 @@ export interface ScrapeJobResult {
    *  observations and the pipeline reused them instead of spending a
    *  fresh SerpApi call -- see api/services/scrape_job_service.py. */
   from_cache: boolean;
+  /** Map-display metadata only -- never part of any index/weight
+   *  calculation. Null for an airport with no verified city/coordinate
+   *  mapping (index_engine.city_mapping / geo_metadata), same as any
+   *  other route on the map. This route is never added to the tracked/
+   *  weighted route set the map and table otherwise draw from, so these
+   *  fields are what let the frontend show it anyway. */
+  origin_city: string | null;
+  destination_city: string | null;
+  origin_lat: number | null;
+  origin_lon: number | null;
+  destination_lat: number | null;
+  destination_lon: number | null;
   /** Only present on a fresh (from_cache=false) call -- describes that
    *  specific SerpApi call, not the route's cumulative history. */
   raw_observations_collected: number | null;

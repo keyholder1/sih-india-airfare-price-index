@@ -4,6 +4,7 @@ import { SectionHeader } from "../layout/SectionHeader";
 import { Panel } from "../primitives/Panel";
 import { useScrapeJob } from "../../hooks/useScrapeJob";
 import { formatIndex, formatPeriod, formatINR } from "../../utils/format";
+import type { ScrapeJobResult } from "../../types";
 
 const STEPS: { key: string; label: string }[] = [
   { key: "queued", label: "Queued" },
@@ -23,7 +24,11 @@ function stepIndex(status: string): number {
  * Index Engine -- not a simulation, not pre-computed. If the route
  * already has previously-recorded real data, the fresh SerpApi call is
  * skipped and that data is reused instead (see result.from_cache). */
-export function RouteLookupSection({ onComplete }: { onComplete?: (route: string) => void }) {
+export function RouteLookupSection({
+  onComplete,
+}: {
+  onComplete?: (result: ScrapeJobResult) => void;
+}) {
   // Pre-filled (not just a placeholder hint) so the button is enabled and
   // a first click works immediately -- an empty field showing "BLR" only
   // as grey placeholder text reads as already-filled-in, and clicking
@@ -63,9 +68,9 @@ export function RouteLookupSection({ onComplete }: { onComplete?: (route: string
   // context) until you went and clicked it separately.
   const notifiedJobId = useRef<string | null>(null);
   useEffect(() => {
-    if (done && job && notifiedJobId.current !== job.id) {
+    if (done && job && job.result && notifiedJobId.current !== job.id) {
       notifiedJobId.current = job.id;
-      onComplete?.(job.result?.route ?? `${job.origin}-${job.destination}`);
+      onComplete?.(job.result);
     }
   }, [done, job, onComplete]);
 

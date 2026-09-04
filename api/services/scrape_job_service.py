@@ -50,6 +50,7 @@ import pandas as pd
 import data_quality as data_quality_mod
 from index_engine.analytics import AirfareAnalytics
 from index_engine.city_mapping import IATA_TO_CITY
+from index_engine.geo_metadata import CITY_COORDINATES
 
 from scraper.config import ScraperConfig
 from scraper.routes import RouteSpec
@@ -300,6 +301,20 @@ def _recompute_and_summarize(
     route_code = f"{origin}-{destination}"
     route_result = next((r for r in analytics.price_index.route_indices if r.route == route_code), None)
 
+    # Map-display metadata only (city name, coordinates) -- never used in
+    # any index/weight/volatility calculation above. An ad-hoc pair run
+    # through this on-demand pipeline is never added to the tracked/
+    # weighted route set (see _route_spec's currently_covered=False), so
+    # it's otherwise invisible to the map/table built from route_inflation
+    # -- these two fields are what let the frontend draw it anyway,
+    # clearly separate from the weighted national-index routes. None
+    # (never guessed) for an airport with no verified city/coordinate
+    # mapping, same as every other route on the map.
+    origin_city = IATA_TO_CITY.get(origin)
+    destination_city = IATA_TO_CITY.get(destination)
+    origin_coord = CITY_COORDINATES.get(origin)
+    destination_coord = CITY_COORDINATES.get(destination)
+
     fares = db.get_route_fares(origin, destination, tree=db.TREE_VALIDATED) if db.is_configured() else []
     fare_values = [f["total_fare"] for f in fares if f["total_fare"] is not None]
     fare_stats: Dict[str, Any] = {
@@ -319,6 +334,12 @@ def _recompute_and_summarize(
         "route": route_code,
         "collected_at": datetime.now(timezone.utc).isoformat(),
         "from_cache": from_cache,
+        "origin_city": origin_city.title() if origin_city else None,
+        "destination_city": destination_city.title() if destination_city else None,
+        "origin_lat": origin_coord[0] if origin_coord else None,
+        "origin_lon": origin_coord[1] if origin_coord else None,
+        "destination_lat": destination_coord[0] if destination_coord else None,
+        "destination_lon": destination_coord[1] if destination_coord else None,
         "raw_observations_collected": quality_fields.get("raw_observations_collected"),
         "validated_observations": quality_fields.get("validated_observations"),
         "rejected_observations": quality_fields.get("rejected_observations"),

@@ -16,6 +16,7 @@ import type {
   AnalyticsResult,
   RecommendedRoutesFile,
   RouteStatus,
+  ScrapeJobResult,
   VolatilityClass,
 } from "../types";
 
@@ -57,6 +58,12 @@ export interface RouteDetail {
 
   priority: number | null;
   tier: 1 | 2 | 3 | null;
+
+  /** True only for a route drawn from buildAdHocRouteDetail -- one just
+   *  run through Section 8's on-demand pipeline, not part of the tracked/
+   *  DGCA-weighted set. Undefined (never explicitly false) for every
+   *  route buildRouteDetails produces. */
+  isAdHoc?: boolean;
 }
 
 function titleCase(name: string): string {
@@ -138,6 +145,77 @@ export function buildRouteDetails(
       tier: rec?.tier ?? null,
     };
   });
+}
+
+/**
+ * A route run through Section 8's on-demand pipeline is deliberately never
+ * added to the tracked/DGCA-weighted route set (see api/services/
+ * scrape_job_service.py's `_route_spec`), so it never appears in
+ * `analytics.route_inflation` and therefore never in `buildRouteDetails`'
+ * output -- the map, table and detail panel all draw from that array.
+ * Without this, running the pipeline for a route outside the existing 20
+ * makes it vanish everywhere except the small results panel under the
+ * form itself, even though it's real data now sitting in Postgres.
+ *
+ * Builds one supplementary RouteDetail from the job result so it can be
+ * drawn alongside the tracked routes -- clearly not part of national-index
+ * weighting (trafficWeight/contributionPoints stay null, same as any
+ * route the engine has no weight for). Returns null when the route is
+ * already tracked (buildRouteDetails already covers it, don't duplicate
+ * the arc) or when either airport has no verified coordinate mapping
+ * (index_engine.geo_metadata) -- never guessed/placed at a fallback point.
+ */
+export function buildAdHocRouteDetail(
+  result: ScrapeJobResult,
+  existing: RouteDetail[],
+): RouteDetail | null {
+  if (existing.some((r) => r.route === result.route)) return null;
+  if (
+    result.origin_lat == null ||
+    result.origin_lon == null ||
+    result.destination_lat == null ||
+    result.destination_lon == null
+  ) {
+    return null;
+  }
+  const [origin, destination] = result.route.split("-");
+
+  return {
+    route: result.route,
+    origin,
+    destination,
+    originCity: result.origin_city,
+    destinationCity: result.destination_city,
+
+    currentIndex: result.route_index,
+    previousIndex: null,
+    momPct: null,
+    yoyPct: null,
+
+    trafficWeight: null,
+    weightInIndex: null,
+    contributionPoints: null,
+
+    volatility: null,
+    volatilityClass: null,
+
+    status: result.route_status as RouteStatus,
+    observationsUsed: result.route_observations_used,
+
+    basePeriodFare: result.route_base_period_fare,
+    periodFare: result.route_period_fare,
+
+    coords: {
+      originLat: result.origin_lat,
+      originLon: result.origin_lon,
+      destLat: result.destination_lat,
+      destLon: result.destination_lon,
+    },
+
+    priority: null,
+    tier: null,
+    isAdHoc: true,
+  };
 }
 
 export type RouteSortKey =

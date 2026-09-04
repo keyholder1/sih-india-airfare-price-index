@@ -38,4 +38,5 @@ CITY_COORDINATES: Dict[str, Tuple[float, float]] = {
     "IXB": (26.6812, 88.3286),  # Bagdogra
     "IXL": (34.1642, 77.5850),  # Leh
     "GOI": (15.3808, 73.8314),  # Goa (Dabolim)
+    "TRV": (8.4821, 76.9200),   # Thiruvananthapuram (Trivandrum)
 }

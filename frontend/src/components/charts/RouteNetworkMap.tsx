@@ -44,6 +44,7 @@ interface Arc {
   width: number;
   heat: number | null;
   detail: RouteDetail;
+  isAdHoc: boolean;
 }
 
 const { w: VW, h: VH } = INDIA_FRAME;
@@ -87,6 +88,7 @@ export function RouteNetworkMap({
         width: 2.6 + ((r.trafficWeight ?? 0) / maxTraffic) * 3.6,
         heat,
         detail: r,
+        isAdHoc: r.isAdHoc === true,
       };
     });
 
@@ -121,7 +123,7 @@ export function RouteNetworkMap({
 
   return (
     <div>
-      <div className="relative mx-auto max-w-[420px]">
+      <div className="relative mx-auto w-full max-w-[600px]">
         <svg
           viewBox={INDIA_VIEWBOX}
           className="h-auto w-full"
@@ -181,6 +183,7 @@ export function RouteNetworkMap({
                   stroke={arc.color}
                   strokeWidth={isSelected ? arc.width + 2.5 : arc.width}
                   strokeLinecap="round"
+                  strokeDasharray={arc.isAdHoc ? "1 7" : undefined}
                   opacity={dim ? 0.35 : 1}
                   className="pointer-events-none transition-opacity"
                 />
@@ -195,15 +198,15 @@ export function RouteNetworkMap({
                 <circle
                   cx={n.x}
                   cy={n.y}
-                  r={active ? 9 : 5.5}
+                  r={active ? 10 : 6}
                   fill={active ? chart.brand : chart.surface}
                   stroke={active ? chart.brand : chart.inkMuted}
-                  strokeWidth={2}
+                  strokeWidth={2.2}
                 />
                 <text
-                  x={n.x + 12}
-                  y={n.y + 5}
-                  fontSize={active ? 25 : 22}
+                  x={n.x + 13}
+                  y={n.y + 6}
+                  fontSize={active ? 27 : 23}
                   fontWeight={active ? 700 : 600}
                   fill={active ? chart.ink : chart.inkMuted}
                   className="tabular"
@@ -262,6 +265,11 @@ function RouteHeatTooltip({ arc, metric }: { arc: Arc; metric: HeatMetric }) {
           : routeLabel(r.route)}
       </p>
       <p className="tabular text-[0.66rem] text-ink-faint">{routeLabel(r.route)}</p>
+      {arc.isAdHoc && (
+        <p className="mt-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-synth">
+          Just run · outside the weighted index
+        </p>
+      )}
       <dl className="mt-1.5 space-y-1 tabular">
         {rows.map((row) => (
           <div
@@ -289,7 +297,7 @@ function HeatLegend({ metric, maxAbs }: { metric: HeatMetric; maxAbs: number }) 
 
   return (
     <div className="mt-4">
-      <div className="mx-auto max-w-[320px]">
+      <div className="mx-auto max-w-[440px]">
         <div
           className="h-2 w-full rounded-full"
           style={{
