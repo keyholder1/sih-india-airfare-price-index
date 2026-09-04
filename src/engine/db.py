@@ -111,6 +111,12 @@ CREATE TABLE IF NOT EXISTS scrape_jobs (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS news_article_cache (
+    cache_key TEXT PRIMARY KEY,
+    articles JSONB NOT NULL,
+    fetched_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 """
 
 
@@ -248,6 +254,40 @@ def insert_run_report(run_id: str, report: Dict[str, Any]) -> None:
                 "INSERT INTO scraper_runs (run_id, report) VALUES (%s, %s) "
                 "ON CONFLICT (run_id) DO UPDATE SET report = EXCLUDED.report",
                 (run_id, json.dumps(report, default=str)),
+            )
+
+
+# --- News article cache ------------------------------------------------------
+# One row per (route/query, calendar week) -- see index_engine.news_provider's
+# NewsSearchQuery. Deliberately caches the *search results* (candidate
+# articles), not the final ranked matches: re-running the ranking against
+# the current route movement is free/local, so caching only guards the
+# actual external API calls (newsdata.io, NewsAPI.org, Event Registry,
+# ...), which are what a real key's quota is spent on. A cache miss on
+# a never-configured DATABASE_URL just means "no cache" -- callers should
+# check db.is_configured() first, same as everywhere else in this module.
+
+
+def get_cached_news(cache_key: str) -> Optional[List[Dict[str, Any]]]:
+    """Returns the cached article list for this key, or ``None`` on a
+    cache miss (never an empty list for "not cached yet" vs "cached but
+    genuinely found nothing" -- those are different outcomes)."""
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT articles FROM news_article_cache WHERE cache_key = %s", (cache_key,))
+            row = cur.fetchone()
+    if row is None:
+        return None
+    return row[0]
+
+
+def set_cached_news(cache_key: str, articles: List[Dict[str, Any]]) -> None:
+    with _connect() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO news_article_cache (cache_key, articles, fetched_at) VALUES (%s, %s, now()) "
+                "ON CONFLICT (cache_key) DO UPDATE SET articles = EXCLUDED.articles, fetched_at = now()",
+                (cache_key, json.dumps(articles, default=str)),
             )
 
 

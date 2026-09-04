@@ -14,10 +14,16 @@ import { useTimeseries } from "./hooks/useTimeseries";
 import { useDataQuality } from "./hooks/useDataQuality";
 
 export default function App() {
-  const analytics = useAnalytics();
-  const timeseries = useTimeseries();
-  const dataStatus = useDataStatus();
-  const dataQuality = useDataQuality();
+  // Bumped after Section 8's on-demand pipeline finishes a run (cache hit
+  // or fresh scrape) so the rest of the dashboard -- National Index, Route
+  // Intelligence, Data Quality -- refetches and reflects the newly
+  // persisted/updated route instead of staying frozen at initial page load.
+  const [dataVersion, setDataVersion] = useState(0);
+
+  const analytics = useAnalytics(dataVersion);
+  const timeseries = useTimeseries(dataVersion);
+  const dataStatus = useDataStatus(dataVersion);
+  const dataQuality = useDataQuality(dataVersion);
 
   // Single source of truth for the selected route — shared by the
   // contribution chart (Section 2), Route Intelligence (Section 3), and
@@ -26,7 +32,7 @@ export default function App() {
 
   return (
     <DashboardShell status={dataStatus.data}>
-      {analytics.loading && <Loading />}
+      {analytics.loading && !analytics.data && <Loading />}
       {analytics.error && <ErrorState error={analytics.error} />}
       {analytics.data && (
         <div className="space-y-14">
@@ -48,8 +54,8 @@ export default function App() {
           <DataQualitySection quality={dataQuality.data} loading={dataQuality.loading} />
           <RiskGeographySection analytics={analytics.data} />
           <NewsContextSection selectedRoute={selectedRoute} />
-          <ForecastSection />
-          <RouteLookupSection />
+          <ForecastSection refreshKey={dataVersion} />
+          <RouteLookupSection onComplete={() => setDataVersion((v) => v + 1)} />
         </div>
       )}
     </DashboardShell>

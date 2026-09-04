@@ -8,8 +8,8 @@ import { formatIndex, formatPeriod, formatSignedPct } from "../../utils/format";
  * against MoSPI's official CPI Airfare sub-index, where the two series
  * actually overlap. Both are backend capabilities with no prior frontend
  * presence (GET /api/v1/analytics/forecast). */
-export function ForecastSection() {
-  const forecast = useForecast();
+export function ForecastSection({ refreshKey = 0 }: { refreshKey?: unknown }) {
+  const forecast = useForecast(refreshKey);
 
   return (
     <section className="scroll-mt-20">

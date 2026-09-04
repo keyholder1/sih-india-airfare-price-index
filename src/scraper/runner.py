@@ -134,6 +134,16 @@ def _stamp_provenance(observation: RawFareObservation, run_id: str, scraped_at: 
         updates["run_id"] = run_id
     if observation.scraped_at is None:
         updates["scraped_at"] = scraped_at
+    # `timestamp` (docs/data_contract.md's optional field -- "when this
+    # observation was made") and `scraped_at` (provenance -- "when our
+    # scraper made the HTTP call") name the same instant for every source
+    # here: none of them separately timestamp the underlying fare quote.
+    # Left unset, `timestamp` reads as permanently missing regardless of
+    # source, which incorrectly flags every real observation as
+    # MISSING_OPTIONAL_FIELD and defeats staleness/freshness reporting in
+    # data_quality.health (oldest/newest observation, data_age_seconds).
+    if observation.timestamp is None:
+        updates["timestamp"] = scraped_at
     return dataclasses.replace(observation, **updates) if updates else observation
 
 

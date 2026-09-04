@@ -180,7 +180,16 @@ def apply_flags(work: pd.DataFrame, config: DataQualityConfig, reference_time: p
     if present_optional:
         missing_optional = pd.Series(False, index=work.index)
         for col in present_optional:
-            missing_optional = missing_optional | blank_mask(work[col])
+            col_blank = blank_mask(work[col])
+            if col_blank.all():
+                # No row in this batch has this field -- it's not
+                # obtainable from any source that contributed to it (e.g.
+                # Google Flights' public results never expose a tax/fee
+                # breakdown), not a per-row gap worth flagging. Still
+                # visible via completeness.py's records_missing_optional
+                # count; just doesn't veto row-level validity here.
+                continue
+            missing_optional = missing_optional | col_blank
         add_flag(missing_optional, rc.MISSING_OPTIONAL_FIELD)
 
     if "timestamp" in work.columns:

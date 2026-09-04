@@ -45,8 +45,7 @@ export function DashboardShell({ status, children }: DashboardShellProps) {
           </p>
           <p className="mt-1.5">
             DGCA passenger traffic, route metadata and coordinates are real /
-            public data. Airfare observations in this build are synthetic and
-            labelled as such.
+            public data. {status ? status.detail : "Airfare observation provenance is labelled above."}
           </p>
         </div>
       </footer>

@@ -204,9 +204,18 @@ class TestFlags:
         assert rc.UNMAPPED_LOCATION not in result.flag_reasons
 
     def test_missing_optional_field_flagged(self):
+        # Second observation_id so both rows survive duplicate detection,
+        # and it *has* baggage set -- the field is genuinely obtainable
+        # (something in this batch supplies it), so the first row's gap is
+        # a real per-row signal, not every source's structural absence
+        # (see validation.apply_flags: a field blank for 100% of the batch
+        # is treated as not obtainable from any source here and doesn't
+        # flag, e.g. Google Flights via SerpApi never returns baggage).
         obs = make_observation()
         obs["baggage"] = None
-        result = validate_fare_batch([obs])
+        has_baggage = make_observation(observation_id=obs["observation_id"] + "_2")
+        has_baggage["baggage"] = "1x23kg"
+        result = validate_fare_batch([obs, has_baggage])
         assert result.flag_reasons.get(rc.MISSING_OPTIONAL_FIELD) == 1
         # Optional-field gaps must not affect required-field completeness.
         assert result.completeness.completeness_rate == 1.0

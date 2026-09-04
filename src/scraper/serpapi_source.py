@@ -241,4 +241,7 @@ class SerpApiSource(FareSource):
             source="serpapi_google_flights",
             stops=len(legs) - 1,
             duration=itinerary.get("total_duration"),
+            # "One way" / "Round trip" -- present on every itinerary per
+            # the verified response schema above, just wasn't being read.
+            fare_type=itinerary.get("type"),
         )

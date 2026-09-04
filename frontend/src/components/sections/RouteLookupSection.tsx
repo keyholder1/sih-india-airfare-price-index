@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import clsx from "clsx";
 import { SectionHeader } from "../layout/SectionHeader";
 import { Panel } from "../primitives/Panel";
@@ -23,7 +23,7 @@ function stepIndex(status: string): number {
  * Index Engine -- not a simulation, not pre-computed. If the route
  * already has previously-recorded real data, the fresh SerpApi call is
  * skipped and that data is reused instead (see result.from_cache). */
-export function RouteLookupSection() {
+export function RouteLookupSection({ onComplete }: { onComplete?: () => void }) {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const { job, error, isRunning, start, reset } = useScrapeJob();
@@ -39,6 +39,20 @@ export function RouteLookupSection() {
   const result = job?.result ?? null;
   const failed = job?.status === "failed";
   const done = job?.status === "done";
+
+  // The pipeline persists new/updated data straight to Postgres -- notify
+  // the rest of the dashboard once per completed job so National Index,
+  // Route Intelligence, Data Quality and the Forecast section refetch and
+  // reflect it, instead of staying frozen at whatever loaded on page
+  // mount. Guarded by job id so this fires once per job, not on every
+  // re-render while status stays "done".
+  const notifiedJobId = useRef<string | null>(null);
+  useEffect(() => {
+    if (done && job && notifiedJobId.current !== job.id) {
+      notifiedJobId.current = job.id;
+      onComplete?.();
+    }
+  }, [done, job, onComplete]);
 
   return (
     <section className="scroll-mt-20">

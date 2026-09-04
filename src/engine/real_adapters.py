@@ -22,10 +22,13 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from index_engine import AirfarePriceIndex
+from index_engine.composite_news_provider import CompositeNewsProvider
+from index_engine.eventregistry_news_provider import ENV_API_KEY as EVENTREGISTRY_ENV_API_KEY, EventRegistryNewsProvider
 from index_engine.gdelt_news_provider import GdeltNewsProvider
 from index_engine.mock_news_provider import MockNewsProvider
 from index_engine.news_context import NewsContextService, route_movement_from_row
 from index_engine.news_provider import NewsProvider
+from index_engine.newsapi_org_news_provider import ENV_API_KEY as NEWSAPI_ORG_ENV_API_KEY, NewsApiOrgProvider
 from index_engine.newsdata_news_provider import ENV_API_KEY as NEWSDATA_ENV_API_KEY, NewsdataNewsProvider
 from index_engine.route_analysis import RouteInflationRow
 from index_engine.utils import pct_change, shift_period
@@ -33,6 +36,7 @@ from index_engine.utils import pct_change, shift_period
 import data_quality as data_quality_mod
 
 from src.engine import data_access
+from src.engine.news_cache_provider import CachingNewsProvider
 from src.engine.protocols import (
     IndexResult,
     NewsEvent,
@@ -47,23 +51,36 @@ from src.engine.protocols import (
 
 REPO_ROOT = data_access.REPO_ROOT
 
-#: News provider selection, in priority order: NEWS_PROVIDER=mock forces
-#: the deterministic fixture provider (the test suite does this -- see
-#: tests/conftest.py -- so pytest never depends on a live network call);
-#: otherwise NEWSDATA_API_KEY (if set) selects newsdata.io; otherwise
-#: GDELT (free, keyless, but not always reachable from every network).
-#: MockNewsProvider's fixture data is anchored around 2026-08-14 (see
-#: that module's docstring) -- the mock path needs its `as_of` to match
-#: that fixed window; every real path searches around the actual current
-#: time.
+#: News provider selection: NEWS_PROVIDER=mock forces the deterministic
+#: fixture provider (the test suite does this -- see tests/conftest.py --
+#: so pytest never depends on a live network call). Otherwise every real
+#: source with a configured key (newsdata.io, NewsAPI.org, Event
+#: Registry/newsapi.ai) is queried together via CompositeNewsProvider --
+#: relevance ranking in news_matching is the only thing deciding which
+#: articles surface, not which key happened to find them -- falling back
+#: to GDELT (free, keyless, but not always reachable from every network)
+#: only if none of the keyed sources are configured. The whole thing is
+#: wrapped in a one-week Postgres cache (CachingNewsProvider) so looking
+#: at the same route repeatedly doesn't re-spend any of those keys'
+#: quota. MockNewsProvider's fixture data is anchored around 2026-08-14
+#: (see that module's docstring) -- the mock path needs its `as_of` to
+#: match that fixed window; every real path searches around the actual
+#: current time.
 _USE_MOCK_NEWS = os.environ.get("NEWS_PROVIDER", "").lower() == "mock"
 _MOCK_NEWS_ANCHOR = datetime(2026, 8, 14, 9, 0, 0)  # naive, matches DEMO_ARTICLES
 
 
 def _default_news_provider() -> NewsProvider:
+    keyed_providers: List[NewsProvider] = []
     if os.environ.get(NEWSDATA_ENV_API_KEY):
-        return NewsdataNewsProvider()
-    return GdeltNewsProvider()
+        keyed_providers.append(NewsdataNewsProvider())
+    if os.environ.get(NEWSAPI_ORG_ENV_API_KEY):
+        keyed_providers.append(NewsApiOrgProvider())
+    if os.environ.get(EVENTREGISTRY_ENV_API_KEY):
+        keyed_providers.append(EventRegistryNewsProvider())
+
+    inner: NewsProvider = CompositeNewsProvider(keyed_providers) if keyed_providers else GdeltNewsProvider()
+    return CachingNewsProvider(inner)
 
 
 def _letter_grade(score_0_100: float) -> str:
