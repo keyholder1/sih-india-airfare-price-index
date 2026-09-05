@@ -75,8 +75,18 @@ class CachingNewsProvider(NewsProvider):
             return [_article_from_dict(a) for a in cached]
 
         articles = self._inner.search(query)
-        try:
-            db.set_cached_news(key, [a.to_dict() for a in articles])
-        except Exception:  # noqa: BLE001 -- a cache-write failure must not break the feature
-            pass
+        # NewsProvider.search() returns [] both when a search genuinely
+        # found nothing AND when the call itself failed (bad/expired key,
+        # network error, rate limit -- see its own "never raises" contract).
+        # Caching an empty result for a full week would silently entrench
+        # whichever one just happened -- a single transient failure (e.g.
+        # a key that was briefly misconfigured) would then read as "no
+        # news for this route" for the rest of the week even after the
+        # real cause is fixed. Only a non-empty result is safe to cache
+        # this long; an empty one is retried next time instead.
+        if articles:
+            try:
+                db.set_cached_news(key, [a.to_dict() for a in articles])
+            except Exception:  # noqa: BLE001 -- a cache-write failure must not break the feature
+                pass
         return articles
