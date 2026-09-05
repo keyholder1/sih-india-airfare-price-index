@@ -100,7 +100,8 @@ class NewsdataNewsProvider(NewsProvider):
         try:
             client = self._client or httpx.Client(timeout=REQUEST_TIMEOUT_SECONDS)
             response = client.get(NEWSDATA_ENDPOINT, params=params)
-        except httpx.HTTPError:
+        except httpx.HTTPError as exc:
+            print(f"[newsdata] network error calling {NEWSDATA_ENDPOINT}: {type(exc).__name__}: {exc}")
             return None, False  # network-level failure -- another key won't help
         finally:
             if self._client is None:
@@ -110,19 +111,24 @@ class NewsdataNewsProvider(NewsProvider):
                     pass
 
         if response.status_code == 429:
+            print(f"[newsdata] 429 rate-limited for q={q!r}")
             return None, True
         try:
             payload = response.json()
         except ValueError:
+            print(f"[newsdata] non-JSON response, status={response.status_code}, body={response.text[:300]!r}")
             return None, False
 
         if payload.get("status") != "success":
             code = (payload.get("results") or {}).get("code") if isinstance(payload.get("results"), dict) else None
+            print(f"[newsdata] status!=success, http={response.status_code}, code={code}, payload={payload!r}"[:500])
             return None, response.status_code in (401, 403) or code in _ROTATE_ON_ERROR_CODES
+        print(f"[newsdata] success, http={response.status_code}, q={q!r}, results_count={len(payload.get('results') or [])}")
         return payload, False
 
     def search(self, query: NewsSearchQuery) -> List[NewsArticle]:
         if not self._api_keys:
+            print("[newsdata] no API key configured (NEWSDATA_API_KEY env var empty/unset)")
             return []
 
         q = self._build_query(query)
